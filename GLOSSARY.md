@@ -29,7 +29,7 @@ _Avoid_: Closet, collection, inventory
 ### Styling
 
 **Outfit**:
-A combination of Items worn together. It may include Suggested Items the User doesn't own.
+A complete head-to-toe combination worn together: a one-piece garment or a top and a bottom, plus footwear, with an optional outer layer and accessories. It is built mostly from the User's Items and may include Suggested Items they don't own.
 _Avoid_: Look, fit, ensemble
 
 **Suggested Item**:
