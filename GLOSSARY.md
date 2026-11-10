@@ -32,6 +32,10 @@ _Avoid_: Closet, collection, inventory
 A complete head-to-toe combination worn together: a one-piece garment or a top and a bottom, plus footwear, with an optional outer layer and accessories. It is built mostly from the User's Items and may include Suggested Items they don't own.
 _Avoid_: Look, fit, ensemble
 
+**Slot**:
+The part of an Outfit a piece fills: top, bottom, one-piece, footwear, outer layer or accessory. A piece's category decides its slot.
+_Avoid_: Type, position
+
 **Suggested Item**:
 A piece the AI recommends that isn't in the User's Wardrobe, shown with where to buy it.
 _Avoid_: Product, recommendation, missing item
