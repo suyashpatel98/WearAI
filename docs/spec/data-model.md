@@ -28,7 +28,7 @@ create type feed_status   as enum ('ok', 'failed');
 create type message_kind  as enum ('user', 'assistant', 'divider');
 ```
 
-## Reference tables (seeded, read-only)
+## Reference tables (inserted by a migration, read-only)
 
 **`categories`**: the 68 categories from `item-attributes.md`. The slot is a lookup, never stored on an Item.
 
@@ -38,7 +38,7 @@ create type message_kind  as enum ('user', 'assistant', 'divider');
 | `slot` | `slot` | |
 | `label` | `text` | shown in the review picker |
 
-**`stylists`**: the ten Stylists from `stylists.md`.
+**`stylists`**: the ten Stylists from `stylists.md`. The sample images are bundled with the app, not stored in the database or in Storage (amended by [How does hosted get its reference data and first Wardrobe?](https://github.com/suyashpatel98/WearAI/issues/64)).
 
 | column | type | notes |
 |---|---|---|
@@ -46,8 +46,6 @@ create type message_kind  as enum ('user', 'assistant', 'divider');
 | `name` | `text` | |
 | `tagline` | `text` | |
 | `brief` | `jsonb` | paragraph, signature pieces, palette, fabrics, avoid, menswear/womenswear notes |
-| `sample_menswear_path` | `text` | Storage path |
-| `sample_womenswear_path` | `text` | Storage path |
 | `position` | `int` | display order |
 
 ## The User
@@ -197,13 +195,13 @@ The thread is every row ordered by `created_at`. The model's context is the rows
 
 ## Image budget
 
-**`image_budget`**: a single row, not owned by a User, that caps the total number of Nano Banana calls. It is seeded with `used = 0, cap = 30`.
+**`image_budget`**: a single row, not owned by a User, that caps the total number of Nano Banana calls. A migration inserts it with `used = 0, cap = 30`. The local seed raises `cap` to 1000 (amended by [How does hosted get its reference data and first Wardrobe?](https://github.com/suyashpatel98/WearAI/issues/64)).
 
 | column | type | notes |
 |---|---|---|
 | `id` | `boolean` pk default `true`, check `id` | keeps it to one row |
 | `used` | `int` | |
-| `cap` | `int` | edit the row to raise it |
+| `cap` | `int` | raised on hosted by a migration |
 
 Before every image call, Feed or Style Me, the Edge Function reserves a slot:
 
@@ -278,4 +276,4 @@ One private bucket, `user-media`, with every path under `{user_id}/`:
 {user_id}/outfits/{outfit_id}.jpg
 ```
 
-Policy: `(storage.foldername(name))[1] = auth.uid()::text` for select and insert. Images are served through signed URLs. Stylist sample images sit in a separate public-read bucket, `stylists`.
+Policy: `(storage.foldername(name))[1] = auth.uid()::text` for select and insert. Images are served through signed URLs. There's no `stylists` bucket: the sample images are app assets (amended by [How does hosted get its reference data and first Wardrobe?](https://github.com/suyashpatel98/WearAI/issues/64)).

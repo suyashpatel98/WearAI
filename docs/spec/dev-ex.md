@@ -15,7 +15,7 @@ There are exactly two environments, **`local`** and **`hosted`**. These names ar
 | Gemini 3.8 Flash | Real calls, free-tier key | Real calls, same free-tier key |
 | SAM 3 (Roboflow) | Real calls, free-tier key | Real calls, same free-tier key |
 | Nano Banana 2.1 | **Never.** Uses the fake image provider | Real calls, paid key |
-| `image_budget.cap` (seed) | 1000 | 30 |
+| `image_budget.cap` | 1000 (raised by `seed.sql`) | 30 (from the migration) |
 
 Automated tests are separate from both columns and never call a model. See [Tests](#tests).
 
@@ -508,3 +508,53 @@ updates:
 To check when it's built:
 - whether Dependabot's `deno` ecosystem reads a `deno.json` that sits next to `_shared/` without its own lockfile;
 - whether Dependabot handles the pnpm version that `mise.toml` pins.
+
+## Reference data and seed
+
+Decided in [How does hosted get its reference data and first Wardrobe?](https://github.com/suyashpatel98/WearAI/issues/64).
+
+`db push` applies migrations to hosted but never runs `seed.sql`. So everything the app needs to work goes in a **migration**, and `seed.sql` holds only conveniences for local. `deploy:hosted` never passes `--include-seed`.
+
+| What | Where it comes from | `local` | `hosted` |
+|---|---|---|---|
+| The 68 `categories` and 10 `stylists` (with briefs) | One data migration | `db:reset` | First merge, through `deploy` |
+| `image_budget` row | The same migration, `used = 0, cap = 30` | `seed.sql` raises `cap` to 1000 | Stays 30 |
+| Stylist sample images | App assets in `assets/stylists/` | Bundled | Bundled |
+| The developer's User, Style Profile and Wardrobe | Signing in and using the app | Google sign-in, or the seed User below | Google sign-in on the hosted APK, then sign-ups close |
+| Agent/test User | `seed.sql` | `agent@wearai.test`, onboarded | Never |
+
+### Reference rows live in migrations
+
+- The migrations are the **source of truth for the row data**. `stylists.md` and `item-attributes.md` record why it's designed that way.
+- Changing a brief, label or category is a new migration with `insert … on conflict (id) do update`. A row is removed by a migration too.
+- There's no `seed:hosted` task.
+
+### The image budget
+
+- The migration inserts the row at **`cap = 30`**, so a fresh or broken hosted can never start with a bigger budget.
+- `seed.sql` runs after the migrations on `db:reset` and sets `cap = 1000` on local.
+- **Raising hosted's cap** is a migration (`update image_budget set cap = <n>`) that the developer merges. It also runs locally, but the seed runs after it, so local stays at 1000.
+
+### Stylist sample images are app assets
+
+The 20 images live at `assets/stylists/<stylist_id>-menswear.jpg` and `assets/stylists/<stylist_id>-womenswear.jpg`, about 2 MB in the APK. The app maps each Stylist id to its two files. There's no `stylists` bucket and there are no path columns, so nothing has to be uploaded to hosted. Changing an image means shipping a new APK.
+
+The developer makes them **by hand in the free Gemini app**, never with the paid key, so they don't count against `image_budget`. Until they exist, each file is a plain tile with the Stylist's name, so the picker works from day one. Swapping in the real images is a one-PR change.
+
+### Hosted: everything else comes through the app
+
+On a fresh hosted project, the developer:
+1. installs the hosted APK and signs in with Google;
+2. onboards (Style Profile, reference photos, Stylists);
+3. photographs their clothes to build the Wardrobe (Flash and SAM are free).
+
+Then hosted sign-ups close (see [Secrets](#secrets)). Nothing is copied from local.
+
+### The local seed
+
+`seed.sql` adds:
+- One email/password User, **`agent@wearai.test`**, with a committed password. It exists only on local, so it doesn't matter that the password is public.
+- A finished `profiles` row and one active Stylist, so agents and the developer land past onboarding.
+- `cap = 1000` on `image_budget`.
+
+There's **no sample Wardrobe and no fixture photos**. Items come from uploading through the app on local, which makes real free Flash and SAM calls. To test onboarding, sign up a new email User on local, where sign-ups stay open. The pgTAP budget test needs no Items.
