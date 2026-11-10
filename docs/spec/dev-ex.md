@@ -40,7 +40,7 @@ The second Supabase Free project slot stays unused. There's no hosted dev projec
 ### Which environment the app talks to
 
 - **Development build + Metro:** `APP_ENV=local|hosted` picks `.env.local` or `.env.hosted`, and `local` is the default. Metro reads `EXPO_PUBLIC_SUPABASE_URL` when it starts, so switching environments means restarting Metro, not rebuilding. The phone reaches the Mac's stack through `adb reverse`.
-- **Standalone APK** (the build pipeline is decided in [How do changes reach hosted Supabase and the phone?](https://github.com/suyashpatel98/WearAI/issues/52)): always `hosted`, set at build time.
+- **Standalone APK** (built by `apk:hosted`, see [Deploys](#deploys)): always `hosted`, set at build time.
 - The app shows a small **`LOCAL`** badge whenever it points at `local`.
 - If Google sign-in fails against `local` on the phone, add a sign-in by email that exists only in `__DEV__` bundles. Don't build it until it's needed.
 
@@ -139,8 +139,8 @@ The developer, agents and CI share one set of commands: **mise tasks**, run as `
 | `db:new <name>` | `supabase migration new <name>` |
 | `db:reset` | Rebuilds local from the migrations and the seed, then runs `db:types`. It's the only way to apply migrations locally |
 | `db:types` | Regenerates `supabase/functions/_shared/database.types.ts` from local |
-| `deploy:hosted` | Ships migrations and functions to hosted. What it does is decided in [How do changes reach hosted Supabase and the phone?](https://github.com/suyashpatel98/WearAI/issues/52) |
-| `apk:hosted` | Builds the standalone APK, which always targets hosted. Also decided in that ticket |
+| `deploy:hosted` | Restores hosted if it's paused, then runs `db push` and `functions deploy`. CI runs it on merge, and a human can run it as an escape hatch. See [Deploys](#deploys) |
+| `apk:hosted` | Human only. Builds the release APK (always hosted) on the laptop from clean `main`, signs it and runs `adb install -r` onto the phone. See [Deploys](#deploys) |
 | `logs:hosted` | Reads Edge Function logs. Read-only |
 | `secrets:hosted` | Human only. Prompts for each hosted function secret with hidden input and runs `supabase secrets set`. See [Secrets](#secrets) |
 
@@ -186,6 +186,7 @@ If a step fails, `setup` stops with the step's name and the command to run by ha
 - **Never run a `:hosted` task except `logs:hosted`.**
 - **Never print, commit or paste the contents of `supabase/functions/.env`.**
 - **Open PRs, but never merge them.** The developer merges.
+- **A migration that drops or rewrites data says so in the PR title.**
 - How to test: run `check` while iterating, `test` before opening a PR, and `test:db` after any change to a migration or policy.
 
 ## Tests
@@ -251,7 +252,7 @@ The repo is public, so anything committed is public. Each value is either **publ
 | Nano Banana key (`wearai-images`) | Server-only | **Hosted function secrets only** |
 | Supabase secret key | Server-only | Injected into Edge Functions by Supabase. We never store it |
 | Supabase access token (scoped) | Server-only | GitHub environment `hosted` |
-| Android release keystore and password | Server-only | `~/.config/wearai/release.jks` on the laptop, plus the GitHub environment `hosted` if CI signs the APK |
+| Android release keystore and password | Server-only | `~/.config/wearai/` on the laptop only (the APK is built there) |
 
 Not needed:
 - **Google OAuth client secret.** Native Google Sign-In passes an ID token to Supabase, and that flow has no secret. If Supabase turns out to demand one, it goes in the GitHub environment `hosted`.
@@ -284,13 +285,15 @@ The human-only `secrets:hosted` task prompts, with hidden input, for `GEMINI_API
 All CI secrets live in a GitHub **environment** named `hosted`, whose deployment-branch rule allows only `main`. PR and branch runs can't read them, and fork runs never get secrets at all. It holds:
 
 - `SUPABASE_ACCESS_TOKEN`: a scoped token with only the permissions the deploy needs.
-- `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD` (one password for both the store and the key). These exist only if CI builds the APK.
+- `SUPABASE_DB_PASSWORD`: only if `db push` turns out to need it beyond the scoped token.
+
+The keystore isn't in GitHub, because the APK is built on the laptop.
 
 Set them from the terminal with `gh secret set --env hosted <NAME>`.
 
 ### Android release keystore
 
-The keystore lives outside the repo at `~/.config/wearai/release.jks`. `.gitignore` also blocks `*.jks` and `*.keystore`. There's no other backup. Losing the keystore costs one uninstall and reinstall on the phone, plus registering the new SHA-1 with the Android OAuth client. The data lives in Supabase, so none of it is lost.
+The keystore lives outside the repo at `~/.config/wearai/release.jks`. Its single password (the same for the store and the key) is in `~/.config/wearai/keystore.properties` beside it. `.gitignore` also blocks `*.jks` and `*.keystore`. There's no other backup. Losing the keystore costs one uninstall and reinstall on the phone, plus registering the new SHA-1 with the Android OAuth client. The data lives in Supabase, so none of it is lost.
 
 ### Hosted sign-ups are closed
 
@@ -350,3 +353,62 @@ Agents' PRs face the same ruleset. **Agents open PRs but never merge them**, and
 ### No git hooks
 
 There are no pre-commit or pre-push hooks. The required `ci` check already guards `main`, hooks would slow every commit, and agents often skip them with `--no-verify`. `AGENTS.md` tells agents to run `check` while iterating and `test` before opening a PR.
+
+## Deploys
+
+Decided in [How do changes reach hosted Supabase and the phone?](https://github.com/suyashpatel98/WearAI/issues/52).
+
+### Backend: deployed automatically on merge
+
+A `deploy` workflow runs on every push to `main` that touches `supabase/**`, after `ci` passes. It runs in the GitHub environment `hosted` and calls `mise run deploy:hosted` with `SUPABASE_YES=1`. It isn't a required check, so the path filter is safe. The task:
+
+1. Prints the `▸ hosted` banner.
+2. Restores the project through the Management API if it's paused.
+3. Runs `supabase link`, then `db push --remote --yes` and `functions deploy --use-api --yes`. `functions deploy` bundles on Supabase's servers, so no Docker is needed.
+
+So hosted always matches `main`. Deploys **never set function secrets**; `secrets:hosted` does that (see [Secrets](#secrets)). A human may run `deploy:hosted` from the laptop as an escape hatch, after the confirmation prompt. Agents never do.
+
+To check when it's built:
+- whether `db push --remote` works with only the scoped token, and if not, add `SUPABASE_DB_PASSWORD`;
+- which mechanism closes hosted sign-ups.
+
+### Destructive migrations
+
+There's no automated guard. Hosted holds only the developer's own data, and every migration reaches `main` through a PR the developer merges. A migration that drops or rewrites data says so in its PR title. This rule is in `AGENTS.md`.
+
+### Keeping hosted awake
+
+A scheduled `keep-alive` workflow runs once a day and sends one cheap read to hosted's REST API with the publishable key. It needs no secret. That's enough database activity to stop the Free project pausing after a week of no use. GitHub turns off scheduled workflows after 60 days without repo activity, and the deploy's restore step covers that case.
+
+### App: the hosted APK is built on the laptop
+
+`apk:hosted` (human only) builds the standalone APK and installs it:
+
+1. **It refuses to build** unless the working tree is clean and `HEAD` is a commit on `origin/main`. So the APK always matches what hosted runs.
+2. `APP_VARIANT=release APP_ENV=hosted expo prebuild --platform android`, then `./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a`, signed with `~/.config/wearai/release.jks`.
+3. `adb install -r` onto the connected OnePlus 7T.
+
+The first build may take 10+ minutes, and Gradle's cache makes later ones faster. If laptop builds get painful, the fallbacks are a manually triggered CI build attached to a GitHub Release, which would need the keystore in the `hosted` environment, then EAS Build Free (15 builds a month).
+
+### Two app variants side by side
+
+| | Development build | Hosted APK |
+|---|---|---|
+| Package | `app.wearai.dev` | `app.wearai` |
+| Name on the phone | WearAI Dev | WearAI |
+| Built by | `android` (`expo run:android`) | `apk:hosted` |
+| Signed with | The debug keystore | `~/.config/wearai/release.jks` |
+| JS from | Metro (`dev` or `dev:hosted`) | The bundle built into the APK |
+| Talks to | `local` by default | Always `hosted` |
+
+`app.config.ts` picks the package and name from `APP_VARIANT`. Each variant has its own Android OAuth client in Google Cloud (package plus SHA-1).
+
+### No over-the-air updates
+
+No `expo-updates` and no EAS Update. JS changes reach the development build through Metro, and the hosted APK changes only when it's rebuilt.
+
+### Versioning and rollback
+
+- `versionCode` = `git rev-list --count HEAD`, so it always goes up.
+- `versionName` = `0.1.<count>`. The short commit SHA appears on the app's profile screen.
+- **Rollback means reverting the PR on `main`.** The `deploy` workflow redeploys the functions. A migration is never reversed in place: a new migration undoes it. Then run `apk:hosted` from the revert commit. Never install an older build, because Android refuses a lower `versionCode`.
