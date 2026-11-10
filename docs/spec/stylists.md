@@ -8,11 +8,11 @@ The launch list of Stylists and the brief for each one. Decided in [Which Stylis
 - Every Stylist works for both menswear and womenswear. The User's Style Profile (gender, or the "Which clothes should we suggest?" follow-up) decides which notes apply.
 - A Stylist is a label: a name, a one-line tagline and sample images in the picker. There is no character, avatar or voice.
 - Each Stylist has two sample images, menswear and womenswear. They are generated once on a fictional model and labelled "AI-generated". The picker shows the one that matches the User's clothes setting ("Both" shows both).
-- A User has **1 to 3** active Stylists. They pick at least one during onboarding (nothing is pre-selected) and can change them in Settings. Changes apply from the next day's Feed.
-- The day's 5 Posts are split evenly across the active Stylists:
-  - 1 active: 5 Posts.
-  - 2 active: 3 + 2. The Stylist that gets 3 alternates daily.
-  - 3 active: 2 + 2 + 1. The Stylist that gets 1 rotates daily.
+- A User has **1 to 3** active Stylists. They pick at least one during onboarding (nothing is pre-selected) and can change them in Settings. Changes apply from the next Feed.
+- Each Feed's 3 Posts are split evenly across the active Stylists (amended by [How does the User generate a Feed without the daily Cron?](https://github.com/suyashpatel98/WearAI/issues/40)):
+  - 1 active: 3 Posts.
+  - 2 active: 2 + 1. The Stylist that gets 2 alternates with every successful Feed.
+  - 3 active: 1 + 1 + 1.
   - Saves and dismissals don't change the split.
 - Season follows the month (see the Style Profile decision). The generator adapts each brief to it, for example lighter fabrics in summer and layers in winter.
 
