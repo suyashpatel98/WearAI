@@ -1,0 +1,777 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. Lives only on the prototype/screens branch.
+  Question: "What does each screen show, and how does a User move through the app?"
+  (wayfinder ticket #32). One clickable flow covering onboarding and the three tabs,
+  with two layout variants each for the Feed and the review step (?feed=A|B&review=A|B).
+  Everything is in memory; reload resets. Double-click to open.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WearAI screens prototype</title>
+<style>
+  :root { --ink:#1b1b1f; --mute:#6c6c75; --line:#e4e1dc; --bg:#f6f3ee; --card:#fff; --acc:#5b3df5; --acc-soft:#ece8ff; --warn:#b4541a; --warn-soft:#fff1e6; --ok:#1f7a4d; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:#d9d5ce; }
+  .banner { background:#1b1b1f; color:#fff; padding:8px 16px; font-size:12px; }
+  .layout { display:flex; gap:24px; padding:20px; align-items:flex-start; justify-content:center; flex-wrap:wrap; }
+  .phone { width:380px; height:780px; background:var(--bg); border-radius:36px; border:10px solid #111; position:relative; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,.25); flex:none; }
+  #screen { position:absolute; inset:0; display:flex; flex-direction:column; }
+  .top { padding:14px 16px 10px; display:flex; align-items:center; gap:8px; background:var(--bg); border-bottom:1px solid var(--line); min-height:56px; }
+  .top h1 { font-size:18px; margin:0; flex:1; }
+  .top .sub { font-size:12px; color:var(--mute); font-weight:400; display:block; }
+  .scroll { flex:1; overflow-y:auto; padding:14px 16px 24px; }
+  .foot { padding:12px 16px 16px; border-top:1px solid var(--line); background:var(--bg); }
+  .tabs { display:flex; border-top:1px solid var(--line); background:#fff; }
+  .tabs button { flex:1; border:0; background:none; padding:10px 0 12px; font-size:12px; color:var(--mute); cursor:pointer; }
+  .tabs button b { display:block; font-size:18px; font-weight:400; }
+  .tabs button.on { color:var(--acc); font-weight:600; }
+  button { font:inherit; cursor:pointer; }
+  .btn { display:block; width:100%; border:0; border-radius:12px; padding:13px; background:var(--acc); color:#fff; font-weight:600; }
+  .btn:disabled { background:#bdb7d9; cursor:not-allowed; }
+  .btn.ghost { background:transparent; color:var(--acc); border:1px solid var(--acc); }
+  .btn.plain { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  .btn + .btn { margin-top:8px; }
+  .chip { border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 12px; font-size:13px; }
+  .chip.on { background:var(--acc); border-color:var(--acc); color:#fff; }
+  .icon { border:0; background:none; font-size:18px; padding:4px 6px; }
+  .link { border:0; background:none; color:var(--acc); padding:0; font-weight:600; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:#c9a6ff; border:0; color:#fff; font-weight:700; }
+  h2 { font-size:22px; margin:6px 0 4px; }
+  h3 { font-size:14px; margin:18px 0 8px; }
+  p.lead { color:var(--mute); margin:0 0 14px; }
+  .opt { display:block; width:100%; text-align:left; border:1px solid var(--line); background:#fff; border-radius:12px; padding:12px 14px; margin-bottom:8px; }
+  .opt.on { border-color:var(--acc); background:var(--acc-soft); font-weight:600; }
+  input[type=text], input[type=number], select, textarea { width:100%; font:inherit; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+  label.f { display:block; font-size:12px; color:var(--mute); margin:10px 0 4px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .stylist { text-align:left; padding:0; border:2px solid transparent; }
+  .stylist.on { border-color:var(--acc); }
+  .stylist .meta { padding:8px 10px 10px; }
+  .stylist .meta b { display:block; font-size:13px; }
+  .stylist .meta span { font-size:11px; color:var(--mute); }
+  .samples { display:flex; }
+  .samples > * { flex:1; }
+  .ref { aspect-ratio:3/4; border-radius:12px; border:2px dashed #c9c3ba; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--mute); position:relative; }
+  .ref.has { border:0; background:#e2ddd5; }
+  .ref .x { position:absolute; top:4px; right:4px; background:#fff; border-radius:50%; width:24px; height:24px; border:0; }
+  .tip { background:var(--acc-soft); border-radius:12px; padding:10px 12px; font-size:13px; margin-bottom:12px; }
+  .warnbox { background:var(--warn-soft); color:var(--warn); border-radius:12px; padding:12px; font-size:13px; margin-bottom:12px; }
+  .center { text-align:center; padding:60px 20px; color:var(--mute); }
+  .spinner { width:36px; height:36px; border:4px solid var(--acc-soft); border-top-color:var(--acc); border-radius:50%; margin:0 auto 14px; animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .post { margin-bottom:18px; }
+  .post-img { position:relative; aspect-ratio:4/5; background:#efe9e1; }
+  .post-img svg { width:100%; height:100%; display:block; }
+  .ai { position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.55); color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; }
+  .post-body { padding:10px 12px 12px; }
+  .row { display:flex; align-items:center; gap:8px; }
+  .spacer { flex:1; }
+  .tag { background:var(--acc-soft); color:var(--acc); font-size:11px; font-weight:600; padding:3px 8px; border-radius:999px; }
+  .caption { margin:8px 0 0; }
+  .act { border:1px solid var(--line); background:#fff; border-radius:999px; padding:5px 10px; font-size:12px; }
+  .act.on { background:#ffe9a8; border-color:#e7c45a; }
+  .shop { margin-top:10px; border-top:1px solid var(--line); padding-top:8px; }
+  .shop-h { font-size:11px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  .shop-row { display:flex; align-items:center; gap:8px; width:100%; border:0; background:none; padding:6px 0; text-align:left; }
+  .shop-row span.n { flex:1; }
+  .sw { width:40px; height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px; flex:none; }
+  .sw.big { width:100%; height:auto; aspect-ratio:1; font-size:64px; border-radius:12px; }
+  .itemrow { display:flex; gap:10px; align-items:center; padding:10px; background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:8px; }
+  .itemrow.flag { border-color:#e7a96d; background:var(--warn-soft); }
+  .itemrow .info { flex:1; min-width:0; }
+  .itemrow .info b { display:block; font-size:13px; }
+  .itemrow .info span { font-size:11px; color:var(--mute); }
+  .mini { border:1px solid var(--line); background:#fff; border-radius:8px; padding:4px 7px; font-size:11px; }
+  .tile { text-align:left; background:#fff; border:1px solid var(--line); border-radius:12px; padding:6px; }
+  .tile b { display:block; font-size:12px; margin-top:4px; font-weight:500; }
+  .tile.off { opacity:.5; }
+  .badge { font-size:10px; background:#eee; border-radius:4px; padding:1px 4px; }
+  .chips { display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:6px; }
+  .chips .chip { flex:none; }
+  .msg { max-width:85%; padding:9px 12px; border-radius:14px; margin:6px 0; }
+  .msg.u { margin-left:auto; background:var(--acc); color:#fff; border-bottom-right-radius:4px; }
+  .msg.a { background:#fff; border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .msg .post-img { border-radius:10px; overflow:hidden; margin-top:8px; }
+  .divider { text-align:center; font-size:11px; color:var(--mute); margin:14px 0; display:flex; align-items:center; gap:8px; }
+  .divider:before, .divider:after { content:""; flex:1; border-top:1px solid var(--line); }
+  .compose { display:flex; gap:8px; padding:10px 12px; border-top:1px solid var(--line); background:#fff; }
+  .compose input { flex:1; border-radius:999px; }
+  .compose button { border:0; background:var(--acc); color:#fff; border-radius:999px; padding:0 16px; }
+  .banner2 { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; margin-bottom:10px; font-size:13px; background:#fff; border:1px solid var(--line); }
+  .banner2.rev { background:var(--acc-soft); border-color:transparent; }
+  .banner2.bad { background:var(--warn-soft); color:var(--warn); border-color:transparent; }
+  .switch { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; margin-top:12px; }
+  .switch .t { flex:1; }
+  .switch .t span { display:block; font-size:12px; color:var(--mute); }
+  .tog { width:44px; height:26px; border-radius:999px; border:0; background:#ccc; position:relative; flex:none; }
+  .tog:after { content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .15s; }
+  .tog.on { background:var(--acc); }
+  .tog.on:after { left:21px; }
+  .sheet-bg { position:absolute; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:flex-end; z-index:5; }
+  .sheet { background:var(--bg); width:100%; border-radius:18px 18px 0 0; padding:16px; max-height:85%; overflow-y:auto; }
+  .sheet h3 { margin:0 0 4px; font-size:16px; }
+  .sheet .sys { font-size:11px; color:var(--mute); text-transform:uppercase; margin-bottom:8px; }
+  .pick { aspect-ratio:1; border:0; border-radius:6px; position:relative; }
+  .pick.on { outline:3px solid var(--acc); outline-offset:-3px; }
+  .pick.on:after { content:"✓"; position:absolute; top:3px; right:5px; color:#fff; font-weight:700; text-shadow:0 0 3px #000; }
+  .toast { position:absolute; left:16px; right:16px; bottom:70px; background:#1b1b1f; color:#fff; padding:10px 14px; border-radius:10px; font-size:13px; z-index:9; }
+  .pager { display:flex; align-items:center; justify-content:center; gap:14px; margin:8px 0; }
+  .dots i { display:inline-block; width:6px; height:6px; border-radius:50%; background:#ccc; margin:0 2px; }
+  .dots i.on { background:var(--acc); }
+  .settings-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); }
+  .settings-row select { width:auto; }
+  .links a, .linkrow { display:flex; gap:10px; align-items:center; padding:10px; background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:8px; width:100%; text-align:left; }
+  .price { font-weight:700; }
+  /* panel */
+  aside { width:340px; background:#fff; border-radius:14px; padding:14px 16px; font-size:13px; max-height:780px; overflow-y:auto; }
+  aside h4 { margin:14px 0 6px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--mute); }
+  aside h4:first-child { margin-top:0; }
+  aside .btns { display:flex; flex-wrap:wrap; gap:6px; }
+  aside .btns button { border:1px solid var(--line); background:#faf9f7; border-radius:8px; padding:5px 8px; font-size:12px; }
+  aside .btns button.on { background:var(--acc); color:#fff; border-color:var(--acc); }
+  aside pre { background:#f4f2ee; padding:8px; border-radius:8px; font-size:11px; white-space:pre-wrap; margin:0; }
+  aside ol { padding-left:18px; margin:0; }
+  aside li { margin-bottom:6px; }
+</style>
+</head>
+<body>
+<div class="banner">PROTOTYPE, throwaway. Answers “What does each screen show, and how does a User move through the app?” Everything is fake and in memory; reload resets. Use the panel on the right to jump around and simulate failures.</div>
+<div class="layout">
+  <div class="phone"><div id="screen"></div></div>
+  <aside id="panel"></aside>
+</div>
+<script>
+/* ---------- reference data (from GLOSSARY.md and docs/spec/*) ---------- */
+const STYLISTS = [
+  ['indian_traditional','Indian Traditional','Classic Indian dressing, done properly.',['maroon','gold']],
+  ['indo_western','Indo-Western','Indian pieces, western ease.',['ivory_cream','teal']],
+  ['handloom_craft','Handloom & Craft','Indian craft, everyday modern.',['blue','orange_rust']],
+  ['smart_casual','Smart Casual','Neat, versatile, always appropriate.',['light_blue','navy']],
+  ['minimalist','Minimalist','Fewer pieces, cleaner lines.',['white','black']],
+  ['quiet_luxury','Quiet Luxury','Looks expensive without trying.',['camel_tan','ivory_cream']],
+  ['streetwear','Streetwear','Oversized, layered, sneaker-first.',['black','olive']],
+  ['k_style','K-Style','Soft layers, Seoul-inspired.',['purple_lavender','beige_khaki']],
+  ['athleisure','Athleisure','Gym-ready, street-worthy.',['grey','black']],
+  ['bollywood_glam','Bollywood Glam','Dress to be noticed.',['gold','red']],
+].map(([id,name,tagline,palette]) => ({id,name,tagline,palette}));
+const ST = id => STYLISTS.find(s => s.id === id);
+
+const COLOURS = { black:'#2a2a2a', white:'#f7f7f7', ivory_cream:'#f1e7cf', grey:'#9a9a9a', beige_khaki:'#cdb990', camel_tan:'#c19a6b', brown:'#6b4a2f', navy:'#22315a', blue:'#2f6fd1', light_blue:'#9cc7ef', teal:'#1f8a8a', green:'#2f8f4e', olive:'#6b7a35', yellow_mustard:'#d9a521', orange_rust:'#c4602a', red:'#c62f2f', maroon:'#6e1f2b', pink:'#e79ab4', purple_lavender:'#a48bd6', gold:'#c9a43c', silver:'#c0c4c8', multicolour:'#b05fd0' };
+const nice = s => s.replace(/_/g,' ').replace(/^./, c => c.toUpperCase());
+
+const CATEGORIES = {
+  top:[['tshirt','T-shirt'],['shirt','Shirt'],['polo','Polo'],['sweater','Sweater (pullover)'],['sweatshirt_hoodie','Sweatshirt / hoodie'],['kurta','Kurta / kurti / kameez'],['blouse_top','Blouse / top'],['other_top','Other top']],
+  bottom:[['jeans','Jeans'],['trousers','Trousers'],['chinos','Chinos'],['shorts','Shorts'],['skirt','Skirt'],['joggers_trackpants','Joggers / track pants'],['churidar_pyjama','Churidar / pyjama'],['other_bottom','Other bottom']],
+  one_piece:[['saree','Saree'],['lehenga_set','Lehenga set'],['anarkali_gown','Anarkali / ethnic gown'],['dress','Dress / kaftan'],['other_one_piece','Other one-piece']],
+  footwear:[['sneakers','Sneakers'],['loafers','Loafers / moccasins'],['formal_shoes','Formal shoes'],['boots','Boots'],['sports_shoes','Running / training shoes'],['juttis_mojaris','Juttis / mojaris'],['kolhapuris','Kolhapuris'],['other_footwear','Other footwear']],
+  outer_layer:[['blazer','Blazer / suit jacket'],['jacket','Jacket'],['overshirt','Overshirt / shacket'],['nehru_jacket','Nehru jacket'],['bandhgala','Bandhgala'],['cardigan_shrug','Cardigan / shrug'],['coat','Coat'],['other_outer_layer','Other outer layer']],
+  accessory:[['watch','Watch'],['bag','Bag'],['belt','Belt'],['sunglasses','Sunglasses'],['dupatta_stole','Dupatta / stole'],['other_accessory','Other accessory']],
+};
+const SLOT_OF = {}; const CAT_LABEL = {};
+for (const [slot, list] of Object.entries(CATEGORIES)) for (const [id, label] of list) { SLOT_OF[id] = slot; CAT_LABEL[id] = label; }
+const SLOTS = [['top','Tops','👕'],['bottom','Bottoms','👖'],['one_piece','One-piece','👗'],['footwear','Footwear','👟'],['outer_layer','Outer layers','🧥'],['accessory','Accessories','⌚']];
+const GLYPH = Object.fromEntries(SLOTS.map(s => [s[0], s[2]]));
+const PATTERNS = ['solid','stripes','checks','floral','block_print','woven_pattern','paisley_motif','embroidered','graphic_logo','polka_dot','animal_print','other_print'];
+const BANDS = [['under_1000','Under ₹1,000'],['1000_3000','₹1,000–3,000'],['3000_7000','₹3,000–7,000'],['over_7000','Over ₹7,000']];
+const BAND = id => (BANDS.find(b => b[0] === id) || [,''])[1];
+const REASONS = [['not_my_style','Not my style'],['dislike_piece',"Don't like this piece"],['wouldnt_wear_together',"Wouldn't wear these together"],['doesnt_look_like_me',"Doesn't look like me"]];
+
+const it = (name, category, primary, tradition='western', pattern='solid', extra={}) => ({ name, category, primary, secondary:'', tradition, pattern, description: name + ', as seen in your photos.', ...extra });
+const DETECT = [
+  [ it('Indigo block-print kurta','kurta','navy','ethnic','block_print'), it('Ivory chinos','chinos','ivory_cream'), it('White sneakers','sneakers','white'),
+    it('White leather sneakers','sneakers','white'), it('Black slim jeans','jeans','black'), it('Olive overshirt','overshirt','olive'),
+    it('White crew-neck tee','tshirt','white'), it('Grey knit top','other_top','grey'), it('Steel watch','watch','silver') ],
+  [ it('Navy blazer','blazer','navy'), it('Tan kolhapuris','kolhapuris','camel_tan','ethnic'), it('Maroon silk kurta','kurta','maroon','ethnic','embroidered'), it('Brown loafers','loafers','brown') ],
+  [ it('Light blue oxford shirt','shirt','light_blue','western','stripes'), it('Grey joggers','joggers_trackpants','grey') ],
+];
+const SUGG = {
+  indian_traditional:[it('Ivory churidar','churidar_pyjama','ivory_cream','ethnic'), it('Tan juttis','juttis_mojaris','camel_tan','ethnic','embroidered'), it('Maroon Nehru jacket','nehru_jacket','maroon','ethnic')],
+  indo_western:[it('Mustard Nehru jacket','nehru_jacket','yellow_mustard','fusion'), it('Embroidered juttis','juttis_mojaris','gold','ethnic','embroidered')],
+  handloom_craft:[it('Ikat cotton overshirt','overshirt','blue','fusion','woven_pattern'), it('Khadi trousers','trousers','beige_khaki','fusion')],
+  smart_casual:[it('Brown suede loafers','loafers','brown'), it('Navy chinos','chinos','navy')],
+  minimalist:[it('Grey merino sweater','sweater','grey'), it('Black straight trousers','trousers','black')],
+  quiet_luxury:[it('Camel overcoat','coat','camel_tan'), it('Cream knit polo','polo','ivory_cream')],
+  streetwear:[it('Oversized graphic tee','tshirt','black','western','graphic_logo'), it('Chunky white sneakers','sneakers','white')],
+  k_style:[it('Lavender cardigan','cardigan_shrug','purple_lavender'), it('Wide beige trousers','trousers','beige_khaki')],
+  athleisure:[it('Black joggers','joggers_trackpants','black'), it('Grey running shoes','sports_shoes','grey')],
+  bollywood_glam:[it('Gold bandhgala','bandhgala','gold','ethnic','embroidered'), it('Black velvet loafers','loafers','black')],
+};
+const FILL = { top: it('White linen shirt','shirt','white'), bottom: it('Navy chinos','chinos','navy'), footwear: it('White sneakers','sneakers','white') };
+const SM_FILL = [it('Sage linen shirt','shirt','green'), it('Tan loafers','loafers','camel_tan'), it('Cream bandhgala','bandhgala','ivory_cream','ethnic')];
+
+/* ---------- state ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let uid = 1; const nid = p => p + (uid++);
+const param = k => new URLSearchParams(location.search).get(k);
+
+function fresh() {
+  return {
+    route:'signin', tab:'feed', stack:[], sheet:null, toast:null, draft:null,
+    profile:{ gender:null, clothes:null, budget:null, height:'' },
+    refPhotos:[], stylists:[], items:[], uploads:[], detectN:0, onboardUpload:null,
+    day:0, feed:{ status:'none', error:null, posts:[] }, posts:[], feedIdx:0, reviewIdx:0,
+    sm:{ messages:[], pending:false, used:0 }, wfFilter:'all',
+    flags:{ uploadFails:false, feedFails:false, imagesFail:0, lensEmpty:false, smImageFails:false, smLimit:false },
+    variants:{ feed: param('feed') || 'A', review: param('review') || 'A' },
+  };
+}
+let S = fresh();
+
+/* ---------- helpers ---------- */
+const slotOf = x => SLOT_OF[x.category];
+const wardrobe = () => S.items.filter(i => i.status === 'in_wardrobe');
+const usable = () => wardrobe().filter(i => !i.excluded);
+const item = id => S.items.find(i => i.id === id);
+const post = id => S.posts.find(p => p.id === id);
+const stackTop = () => S.stack[S.stack.length - 1];
+const lower = s => s.charAt(0).toLowerCase() + s.slice(1);
+let toastTimer;
+function toast(msg) { S.toast = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; render(); }, 2600); }
+
+function swatch(x, big) {
+  const c = COLOURS[x.primary] || '#ccc';
+  const light = ['white','ivory_cream','light_blue','silver','beige_khaki','yellow_mustard','pink'].includes(x.primary);
+  return `<div class="sw ${big ? 'big' : ''}" style="background:${c};${light ? 'border:1px solid #ddd' : ''}">${GLYPH[slotOf(x)] || '•'}</div>`;
+}
+
+// A rough "AI-generated image of you": a figure painted in the pieces' colours. Suggested pieces are dashed.
+function figure(pieces, opts = {}) {
+  const by = s => pieces.find(p => slotOf(p) === s);
+  const one = by('one_piece'), t = by('top'), b = by('bottom'), f = by('footwear'), o = by('outer_layer'), a = by('accessory');
+  const c = p => p ? COLOURS[p.primary] : '#d8d2c8';
+  const d = p => p && p.suggested ? 'stroke="#111" stroke-width="1.2" stroke-dasharray="3 2"' : 'stroke="rgba(0,0,0,.15)" stroke-width=".6"';
+  const skin = '#c99a76';
+  return `<svg viewBox="0 0 100 125" preserveAspectRatio="xMidYMid meet">
+    <rect width="100" height="125" fill="${opts.bg || '#efe9e1'}"/>
+    <circle cx="50" cy="16" r="8" fill="${skin}"/><rect x="47" y="23" width="6" height="6" fill="${skin}"/>
+    <rect x="26" y="30" width="8" height="32" rx="4" fill="${o ? c(o) : skin}" ${o ? d(o) : ''}/>
+    <rect x="66" y="30" width="8" height="32" rx="4" fill="${o ? c(o) : skin}" ${o ? d(o) : ''}/>
+    ${one ? `<path d="M34 29 H66 L72 100 H28 Z" fill="${c(one)}" ${d(one)}/>` : `
+      <rect x="36" y="64" width="13" height="42" fill="${c(b)}" ${d(b)}/><rect x="51" y="64" width="13" height="42" fill="${c(b)}" ${d(b)}/>
+      <rect x="34" y="29" width="32" height="37" rx="4" fill="${c(t)}" ${d(t)}/>`}
+    ${o ? `<path d="M30 30 H42 V72 H30 Z M58 30 H70 V72 H58 Z" fill="${c(o)}" ${d(o)}/>` : ''}
+    <rect x="31" y="106" width="17" height="6" rx="3" fill="${c(f)}" ${d(f)}/><rect x="52" y="106" width="17" height="6" rx="3" fill="${c(f)}" ${d(f)}/>
+    ${a ? `<circle cx="71" cy="60" r="3.5" fill="${c(a)}" ${d(a)}/>` : ''}
+  </svg>`;
+}
+
+function caption(pieces) {
+  const order = ['one_piece','top','bottom','outer_layer','footwear','accessory'];
+  const sorted = [...pieces].sort((x, y) => (!!x.suggested - !!y.suggested) || (order.indexOf(slotOf(x)) - order.indexOf(slotOf(y))));
+  const names = sorted.map(p => lower(p.name) + (p.suggested ? ' (suggested)' : ''));
+  const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+  return (sorted[0] && !sorted[0].suggested ? 'Your ' : 'A ') + list;
+}
+
+/* ---------- fake back end ---------- */
+function startUpload(n, onboarding) {
+  const up = { id: nid('u'), photos: n, status: 'processing' };
+  if (!onboarding) S.uploads.push(up);
+  if (onboarding) { S.uploads = S.uploads.filter(u => u.status !== 'failed'); S.uploads.push(up); S.onboardUpload = up.id; S.route = 'processing'; }
+  setTimeout(() => {
+    if (S.flags.uploadFails) { S.flags.uploadFails = false; up.status = 'failed'; render(); return; }
+    const set = DETECT[Math.min(S.detectN++, DETECT.length - 1)];
+    for (const d of set) S.items.push({ ...d, id: nid('i'), uploadId: up.id, status: 'in_review', excluded: false, nameByUser: false, checked: false });
+    up.status = 'in_review';
+    if (S.route === 'processing') { S.route = 'review'; S.reviewIdx = 0; }
+    render();
+  }, 1800);
+}
+
+function splitFor(day) {
+  const s = S.stylists, n = s.length;
+  if (n === 1) return [s[0], s[0], s[0], s[0], s[0]];
+  if (n === 2) { const big = s[day % 2], small = s[(day + 1) % 2]; return [big, small, big, small, big]; }
+  const one = s[day % 3], rest = s.filter(x => x !== one);
+  return [rest[0], rest[1], rest[0], rest[1], one];
+}
+
+function buildOutfit(k, stylistId, maxSugg = 2) {
+  const w = usable(), pieces = [];
+  const pickW = slot => { const c = w.filter(i => slotOf(i) === slot); return c.length ? c[(k + S.day) % c.length] : null; };
+  for (const slot of ['top','bottom','footwear']) {
+    const p = pickW(slot);
+    pieces.push(p ? { ...p } : { ...FILL[slot], id: nid('s'), suggested: true, band: S.profile.budget });
+  }
+  if (k % 2 === 0) { const o = pickW('outer_layer'); if (o) pieces.push({ ...o }); }
+  if (k % 3 === 1) { const a = pickW('accessory'); if (a) pieces.push({ ...a }); }
+  const pool = stylistId ? SUGG[stylistId] : SM_FILL;
+  if ((k + S.day) % 3 !== 2 && pieces.filter(p => p.suggested).length < maxSugg) {
+    const s = pool[(k + S.day) % pool.length];
+    const i = pieces.findIndex(p => slotOf(p) === slotOf(s));
+    const wardrobeLeft = pieces.filter((p, j) => !p.suggested && j !== i).length;
+    const sp = { ...s, id: nid('s'), suggested: true, band: S.profile.budget, links: null };
+    if (i === -1) pieces.push(sp); else if (wardrobeLeft >= 1) pieces[i] = sp;
+  }
+  return pieces;
+}
+
+function makeFeed() {
+  for (const p of S.posts) if (p.day === S.day && !p.saved) p.gone = true; // yesterday's unsaved Posts leave the Feed
+  if (S.flags.feedFails) {
+    S.flags.feedFails = false;
+    S.feed = { status: 'failed', error: "Couldn't pick today's Outfits (Gemini returned an error).", posts: [] };
+    return;
+  }
+  const split = splitFor(S.day), posts = [];
+  split.forEach((st, k) => {
+    if (k >= 5 - S.flags.imagesFail) return; // failed images are simply missing
+    const pieces = buildOutfit(k, st);
+    posts.push({ id: nid('p'), day: S.day, stylist: st, position: k + 1, pieces, caption: caption(pieces), saved: false, savedAt: 0, dismissed: false });
+  });
+  S.flags.imagesFail = 0;
+  S.posts.push(...posts);
+  S.feed = { status: 'ok', error: null, posts: posts.map(p => p.id) };
+  S.feedIdx = 0;
+}
+
+function startFirstFeed() {
+  S.feed = { status: 'generating', error: null, posts: [] };
+  setTimeout(() => { makeFeed(); render(); }, 2200);
+}
+
+function fetchLinks(sp) {
+  if (sp.links || sp.fetching) return;
+  sp.fetching = true;
+  setTimeout(() => {
+    sp.fetching = false;
+    sp.links = S.flags.lensEmpty ? { fallback: true } : { results: [
+      { shop: 'Myntra', title: sp.name + ' (similar)', price: '₹1,499' },
+      { shop: 'Ajio', title: 'Look-alike ' + lower(sp.name), price: '₹1,899' },
+      { shop: 'Amazon.in', title: sp.name + ', regular fit', price: '₹1,199' },
+      { shop: 'Tata CLiQ', title: 'Premium ' + lower(sp.name), price: '₹2,799' },
+    ] };
+    render();
+  }, 1300);
+}
+
+function smReply() {
+  const sinceDivider = []; for (const m of S.sm.messages) { if (m.kind === 'divider') sinceDivider.length = 0; else sinceDivider.push(m); }
+  const userCount = sinceDivider.filter(m => m.kind === 'user').length;
+  const last = sinceDivider[sinceDivider.length - 1].body.toLowerCase();
+  if (userCount === 1 && !/shoe|formal|casual|swap/.test(last)) {
+    S.sm.messages.push({ kind: 'assistant', body: 'Happy to help. Is it day or evening, and how dressy will everyone else be?' });
+    return;
+  }
+  const k = S.sm.messages.length;
+  const pieces = buildOutfit(k, null, 3);
+  const cap = caption(pieces);
+  let status = 'ready';
+  if (S.flags.smImageFails) { S.flags.smImageFails = false; status = 'failed'; }
+  else if (S.flags.smLimit && S.sm.used >= 5) status = 'over_limit';
+  if (status === 'ready') S.sm.used++;
+  const body = /shoe|swap/.test(last) ? 'Swapped the shoes. Here it is again.' : 'Try this: it keeps things relaxed but still put-together.';
+  S.sm.messages.push({ kind: 'assistant', body, outfit: { pieces, caption: cap, status } });
+}
+
+function seed() {
+  const v = S.variants; S = fresh(); S.variants = v;
+  S.profile = { gender: 'male', clothes: 'menswear', budget: '1000_3000', height: '' };
+  S.refPhotos = [nid('r'), nid('r')];
+  S.stylists = ['indian_traditional', 'smart_casual', 'streetwear'];
+  const up = { id: nid('u'), photos: 8, status: 'done' }; S.uploads.push(up); S.detectN = 1;
+  DETECT[0].forEach((d, i) => { if (i !== 3) S.items.push({ ...d, id: nid('i'), uploadId: up.id, status: 'in_wardrobe', excluded: false, nameByUser: false }); });
+  item(S.items[6].id).category = 'sweater'; item(S.items[6].id).name = 'Grey knit sweater';
+  S.route = 'tabs'; S.tab = 'feed'; makeFeed();
+}
+
+/* ---------- screens ---------- */
+const scr = (title, body, { back, sub, right = '', foot = '', tabs = false, scrollId = '' } = {}) => `
+  <div class="top">${back ? `<button class="icon" data-a="back">←</button>` : ''}<h1>${title}${sub ? `<span class="sub">${sub}</span>` : ''}</h1>${right}</div>
+  <div class="scroll" ${scrollId ? `id="${scrollId}"` : ''}>${body}</div>
+  ${foot ? `<div class="foot">${foot}</div>` : ''}
+  ${tabs ? tabBar() : ''}`;
+
+const tabBar = () => `<div class="tabs">${[['feed','◫','Feed'],['styleme','✦','Style Me'],['wardrobe','▤','Wardrobe']].map(([t, g, l]) =>
+  `<button class="${S.tab === t && !S.stack.length ? 'on' : ''}" data-a="tab" data-v="${t}"><b>${g}</b>${l}</button>`).join('')}</div>`;
+const avatar = `<button class="avatar" data-a="push" data-v="settings" title="Settings">S</button>`;
+
+const opt = (on, action, v, label, sub = '') => `<button class="opt ${on ? 'on' : ''}" data-a="${action}" data-v="${v}">${label}${sub ? `<br><small style="color:var(--mute);font-weight:400">${sub}</small>` : ''}</button>`;
+
+function profileFields(inSettings) {
+  const p = S.profile;
+  if (inSettings) return `
+    <div class="settings-row"><span>Gender</span><select data-bind="gender">${[['male','Male'],['female','Female'],['prefer_not_to_say','Prefer not to say']].map(([v, l]) => `<option value="${v}" ${p.gender === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    ${p.gender === 'prefer_not_to_say' ? `<div class="settings-row"><span>Clothes to suggest</span><select data-bind="clothes">${['menswear','womenswear','both'].map(v => `<option value="${v}" ${p.clothes === v ? 'selected' : ''}>${nice(v)}</option>`).join('')}</select></div>` : ''}
+    <div class="settings-row"><span>Budget per suggested piece</span><select data-bind="budget">${BANDS.map(([v, l]) => `<option value="${v}" ${p.budget === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="settings-row"><span>Height (optional)</span><input type="number" style="width:90px" placeholder="cm" value="${esc(p.height)}" data-bind="height"></div>`;
+  return `
+    <h3>Gender</h3>
+    ${opt(p.gender === 'male', 'gender', 'male', 'Male')}${opt(p.gender === 'female', 'gender', 'female', 'Female')}${opt(p.gender === 'prefer_not_to_say', 'gender', 'prefer_not_to_say', 'Prefer not to say')}
+    ${p.gender === 'prefer_not_to_say' ? `<h3>Which clothes should we suggest?</h3><div class="row">${['menswear','womenswear','both'].map(v => `<button class="chip ${p.clothes === v ? 'on' : ''}" data-a="clothes" data-v="${v}">${nice(v)}</button>`).join('')}</div>` : ''}
+    <h3>How much would you spend on one piece?</h3>
+    <p class="lead" style="margin-top:-4px">Pieces we suggest you buy stay in this range.</p>
+    ${BANDS.map(([v, l]) => opt(p.budget === v, 'budget', v, l)).join('')}
+    <h3>Height <span style="color:var(--mute);font-weight:400">(optional)</span></h3>
+    <input type="number" placeholder="cm, e.g. 172" value="${esc(p.height)}" data-bind="height">`;
+}
+
+function stylistGrid() {
+  const cl = S.profile.clothes || 'menswear';
+  return `<div class="grid2">${STYLISTS.map(s => {
+    const on = S.stylists.includes(s.id);
+    const sample = g => figure([{ ...it('', 'shirt', s.palette[0]) }, { ...it('', 'trousers', s.palette[1]) }, { ...it('', 'loafers', s.palette[1]) }], { bg: g === 'w' ? '#f3e6ea' : '#e6ecf3' });
+    return `<button class="card stylist ${on ? 'on' : ''}" data-a="toggleStylist" data-v="${s.id}">
+      <div class="samples">${cl === 'both' ? sample('m') + sample('w') : sample(cl === 'womenswear' ? 'w' : 'm')}</div>
+      <div class="meta"><b>${on ? '✓ ' : ''}${s.name}</b><span>${s.tagline}</span></div></button>`;
+  }).join('')}</div>`;
+}
+
+function refGrid() {
+  return `<div class="grid3">${[0, 1, 2].map(i => S.refPhotos[i]
+    ? `<div class="ref has">${figure([], { bg: '#e2ddd5' })}<button class="x" data-a="removeRef" data-v="${i}">✕</button></div>`
+    : `<button class="ref" data-a="sheet" data-v="refSource">＋<br>Photo ${i + 1}${i ? '' : ''}</button>`).join('')}</div>`;
+}
+
+const ONBOARD = {
+  signin: () => `<div class="scroll" style="display:flex;flex-direction:column;justify-content:center;text-align:center">
+      <div style="font-size:44px">✦</div><h2>WearAI</h2>
+      <p class="lead">See yourself in new Outfits made from the clothes you already own.</p>
+      <button class="btn plain" data-a="go" data-v="profile" style="margin-top:30px">G&nbsp; Continue with Google</button>
+      <p style="font-size:11px;color:var(--mute);margin-top:12px">Google sign-in only.</p></div>`,
+  profile: () => scr('Your Style Profile', `<p class="lead">Three quick questions. You can change them later in Settings.</p>${profileFields(false)}`,
+      { sub: 'Step 1 of 4', foot: `<button class="btn" data-a="go" data-v="refphotos" ${S.profile.gender && S.profile.clothes && S.profile.budget ? '' : 'disabled'}>Continue</button>` }),
+  refphotos: () => scr('Reference Photos', `<p class="lead">Add 1 to 3 full-body photos of yourself. Every image we make shows you, based on these.</p>
+      <div class="tip">Stand straight with your whole body in frame, in good light against a plain background. Wear fitted clothes. Take one from the front, and optionally one from the side.</div>
+      ${refGrid()}`,
+      { back: 1, sub: 'Step 2 of 4', foot: `<button class="btn" data-a="go" data-v="stylists" ${S.refPhotos.length ? '' : 'disabled'}>Continue</button>` }),
+  stylists: () => scr('Pick your Stylists', `<p class="lead">Choose 1 to 3. Your 5 daily Posts are split between them.</p>${stylistGrid()}`,
+      { back: 1, sub: `Step 3 of 4 · ${S.stylists.length} of 3 chosen`, foot: `<button class="btn" data-a="go" data-v="firstUpload" ${S.stylists.length ? '' : 'disabled'}>Continue</button>` }),
+  firstUpload: () => scr('Add your clothes', `<p class="lead">Pick up to 20 photos from your camera roll: you wearing outfits, or clothes laid out. We find each piece and you check them before they join your Wardrobe.</p>
+      <div class="tip">More photos means more Items to work with. Your first Feed needs at least one Item. You can add more photos any time from the Wardrobe tab.</div>`,
+      { back: 1, sub: 'Step 4 of 4', foot: `<button class="btn" data-a="picker" data-v="onboard">Choose photos</button>` }),
+  processing: () => {
+    const up = S.uploads.find(u => u.id === S.onboardUpload);
+    if (up && up.status === 'failed') return scr('Add your clothes', `<div class="warnbox">Couldn't process these photos, try again.</div>`,
+      { sub: 'Step 4 of 4', foot: `<button class="btn" data-a="picker" data-v="onboard">Choose photos again</button>` });
+    return scr('Add your clothes', `<div class="center"><div class="spinner"></div>Finding your clothes in ${up ? up.photos : ''} photo${up && up.photos === 1 ? '' : 's'}…<br><small>This takes about a minute. Keep the app open.</small></div>`, { sub: 'Step 4 of 4' });
+  },
+  review: () => reviewScreen(S.onboardUpload, true),
+};
+
+/* ---------- review (two variants) ---------- */
+function reviewScreen(uploadId, onboarding) {
+  const list = S.items.filter(i => i.uploadId === uploadId && i.status === 'in_review');
+  const up = S.uploads.find(u => u.id === uploadId);
+  const sub = `${list.length} Item${list.length === 1 ? '' : 's'} from ${up.photos} photo${up.photos === 1 ? '' : 's'}`;
+  const finish = `<button class="btn" data-a="finishReview" data-v="${uploadId}" ${list.length ? '' : 'disabled'}>Add ${list.length} Item${list.length === 1 ? '' : 's'} to Wardrobe</button>`;
+  const meta = i => `${CAT_LABEL[i.category]} · ${nice(i.primary)} · ${nice(i.tradition)}`;
+  const flagged = i => i.category.startsWith('other_');
+  if (S.variants.review === 'A') {
+    return scr('Check your Items', `<p class="lead">Fix anything we got wrong, merge doubles and delete what isn't yours. Everything left joins your Wardrobe.</p>
+      ${list.map(i => `<div class="itemrow ${flagged(i) ? 'flag' : ''}">${swatch(i)}<div class="info"><b>${esc(i.name)}</b><span>${meta(i)}</span>${flagged(i) ? `<span style="color:var(--warn)"> · We weren't sure what this is</span>` : ''}
+        <div class="row" style="margin-top:6px"><button class="mini" data-a="fix" data-v="${i.id}">Fix</button><button class="mini" data-a="mergeStart" data-v="${i.id}">Same as…</button><button class="mini" data-a="delReview" data-v="${i.id}">Delete</button></div></div></div>`).join('')}`,
+      { back: !onboarding, sub, foot: finish });
+  }
+  const todo = list.filter(i => !i.checked);
+  const cur = todo[0];
+  if (!cur) return scr('Check your Items', `<div class="center">All ${list.length} checked.</div>${list.map(i => `<div class="itemrow">${swatch(i)}<div class="info"><b>${esc(i.name)}</b><span>${meta(i)}</span></div><button class="mini" data-a="uncheck" data-v="${i.id}">Edit</button></div>`).join('')}`, { back: !onboarding, sub, foot: finish });
+  const n = list.length - todo.length + 1;
+  return scr('Check your Items', `<div class="pager dots">${list.map(i => `<i class="${i.checked ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="card" style="padding:12px">${swatch(cur, true)}
+      <h2 style="margin-top:10px">${esc(cur.name)}</h2><p class="lead">${meta(cur)}</p>
+      ${flagged(cur) ? `<div class="warnbox">We weren't sure what this is. Pick a category.</div>` : ''}
+      <p style="font-size:12px;color:var(--mute)">Item ${n} of ${list.length}</p></div>`,
+    { back: !onboarding, sub, foot: `<button class="btn" data-a="checkItem" data-v="${cur.id}">Looks right</button>
+      <div class="row" style="margin-top:8px"><button class="btn plain" data-a="fix" data-v="${cur.id}">Fix</button><button class="btn plain" style="margin:0" data-a="mergeStart" data-v="${cur.id}">Same as…</button><button class="btn plain" style="margin:0" data-a="delReview" data-v="${cur.id}">Delete</button></div>` });
+}
+
+/* ---------- Feed ---------- */
+function postCard(p, { inSaved = false } = {}) {
+  const sugg = p.pieces.filter(x => x.suggested);
+  return `<div class="card post">
+    <div class="post-img">${figure(p.pieces)}<span class="ai">AI-generated</span></div>
+    <div class="post-body">
+      <div class="row"><span class="tag">${ST(p.stylist).name}</span><span class="spacer"></span>
+        <button class="act ${p.saved ? 'on' : ''}" data-a="save" data-v="${p.id}">${p.saved ? '★ Saved' : '☆ Save'}</button>
+        ${inSaved || p.saved ? '' : `<button class="act" data-a="dismiss" data-v="${p.id}">✕ Dismiss</button>`}</div>
+      <p class="caption">${esc(p.caption)}</p>
+      ${sugg.length ? `<div class="shop"><div class="shop-h">Buy something similar</div>${sugg.map(s => `<button class="shop-row" data-a="shop" data-v="${p.id}|${s.id}">${swatch(s)}<span class="n">${esc(s.name)}<br><small style="color:var(--mute)">${BAND(s.band)}</small></span>›</button>`).join('')}</div>` : ''}
+    </div></div>`;
+}
+
+function feedTab() {
+  const saved = S.posts.filter(p => p.saved).length;
+  const right = `<button class="chip" data-a="push" data-v="saved">★ Saved${saved ? ' ' + saved : ''}</button>${avatar}`;
+  const date = new Date(2026, 10, 9 + S.day).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  const f = S.feed;
+  let body;
+  if (f.status === 'generating') body = `<div class="center"><div class="spinner"></div><b>Making your first Feed…</b><br>Five Outfits, built from your Wardrobe. This takes a minute or two.</div>`;
+  else if (f.status === 'failed') body = `<div class="warnbox"><b>No Feed today.</b><br>${esc(f.error)}</div><div class="center" style="padding-top:10px">Your next Feed arrives tomorrow at 5 AM.<br><br><button class="link" data-a="tab" data-v="styleme">Try Style Me instead →</button></div>`;
+  else if (f.status === 'none') body = `<div class="center">No Feed yet.</div>`;
+  else {
+    const live = f.posts.map(post).filter(p => !p.dismissed);
+    if (!live.length) body = `<div class="center">That's everything for today.<br>New Posts tomorrow at 5 AM.</div>`;
+    else if (S.variants.feed === 'A') body = live.map(p => postCard(p)).join('') + `<div class="center" style="padding:10px">That's today's ${live.length}. New Posts tomorrow at 5 AM.</div>`;
+    else {
+      S.feedIdx = Math.min(S.feedIdx, live.length - 1);
+      const p = live[S.feedIdx];
+      body = `<div class="pager"><button class="icon" data-a="feedPage" data-v="-1" ${S.feedIdx ? '' : 'disabled'}>‹</button><span class="dots">${live.map((_, i) => `<i class="${i === S.feedIdx ? 'on' : ''}"></i>`).join('')}</span><button class="icon" data-a="feedPage" data-v="1" ${S.feedIdx < live.length - 1 ? '' : 'disabled'}>›</button></div>${postCard(p)}`;
+    }
+  }
+  return scr('Today', body, { sub: date, right, tabs: true, scrollId: 'feed' });
+}
+
+function savedScreen() {
+  const list = S.posts.filter(p => p.saved).sort((a, b) => b.savedAt - a.savedAt);
+  return scr('Saved', list.length ? `<div class="grid2">${list.map(p => `<button class="tile" data-a="push" data-v="post|${p.id}"><div class="post-img" style="border-radius:8px;overflow:hidden">${figure(p.pieces)}</div><b>${esc(p.caption)}</b></button>`).join('')}</div>` : `<div class="center">Save Posts you like and they stay here.</div>`,
+    { back: 1, sub: 'Kept for good' });
+}
+
+function shopScreen(postId, sid) {
+  const p = post(postId), s = p.pieces.find(x => x.id === sid);
+  fetchLinks(s);
+  let body = `<div class="row" style="margin-bottom:12px">${swatch(s)}<div><b>${esc(s.name)}</b><br><small style="color:var(--mute)">Cut out of your Post image · ${BAND(s.band)}</small></div></div>`;
+  if (!s.links) body += `<div class="center"><div class="spinner"></div>Looking for similar pieces at Indian shops…</div>`;
+  else if (s.links.fallback) body += `<div class="tip">We couldn't find close matches. Search these shops instead:</div>${['Myntra','Ajio','Amazon.in'].map(sh => `<button class="linkrow" data-a="openLink" data-v="${sh}"><span style="flex:1">Search “${esc(lower(s.name))}” on <b>${sh}</b></span>↗</button>`).join('')}`;
+  else body += `<p class="lead">Similar, not exact. Prices from the shop.</p>${s.links.results.map(r => `<button class="linkrow" data-a="openLink" data-v="${r.shop}">${swatch(s)}<span style="flex:1">${esc(r.title)}<br><small style="color:var(--mute)">${r.shop}</small></span><span class="price">${r.price}</span></button>`).join('')}`;
+  return scr('Buy something similar', body, { back: 1 });
+}
+
+/* ---------- Style Me ---------- */
+function styleMeTab() {
+  const left = 5 - S.sm.used;
+  const right = `${S.flags.smLimit ? `<span class="chip">${Math.max(left, 0)} of 5 left</span>` : ''}<button class="chip" data-a="smNew">＋ New</button>${avatar}`;
+  const msgs = S.sm.messages;
+  const body = !msgs.length ? `<div class="center" style="padding:30px 10px">Tell the stylist where you're going or what you want to wear. It replies with Outfits from your Wardrobe, shown on you.
+      <div style="margin-top:16px">${["What should I wear to a friend's sangeet?", 'Something for a first date, nothing too formal', 'Office Monday, but make it interesting'].map(t => `<button class="opt" data-a="smExample" data-v="${esc(t)}">${t}</button>`).join('')}</div></div>`
+    : msgs.map(m => {
+      if (m.kind === 'divider') return `<div class="divider">New conversation</div>`;
+      if (m.kind === 'user') return `<div class="msg u">${esc(m.body)}</div>`;
+      const o = m.outfit;
+      let extra = '';
+      if (o) {
+        if (o.status === 'ready') extra = `<div class="post-img">${figure(o.pieces)}<span class="ai">AI-generated</span></div><p class="caption" style="font-size:13px">${esc(o.caption)}</p>`;
+        else if (o.status === 'failed') extra = `<div class="warnbox" style="margin:8px 0 4px">Couldn't make this image.</div><p class="caption" style="font-size:13px">${esc(o.caption)}</p>`;
+        else extra = `<p class="caption" style="font-size:13px">${esc(o.caption)}</p><div class="tip" style="margin:6px 0 0">You've used today's 5 images, more at midnight.</div>`;
+      }
+      return `<div class="msg a">${esc(m.body)}${extra}</div>`;
+    }).join('') + (S.sm.pending ? `<div class="msg a"><div class="spinner" style="width:18px;height:18px;border-width:3px;margin:0"></div></div>` : '');
+  return `<div class="top"><h1>Style Me</h1>${right}</div>
+    <div class="scroll" id="sm">${body}</div>
+    <div class="compose"><input type="text" id="smInput" placeholder="Ask for an Outfit…" ${S.sm.pending ? 'disabled' : ''}><button data-a="smSend" ${S.sm.pending ? 'disabled' : ''}>Send</button></div>
+    ${tabBar()}`;
+}
+
+/* ---------- Wardrobe ---------- */
+function wardrobeTab() {
+  const w = wardrobe();
+  const banners = S.uploads.filter(u => u.status !== 'done').map(u =>
+    u.status === 'processing' ? `<div class="banner2"><div class="spinner" style="width:18px;height:18px;border-width:3px;margin:0"></div>Finding clothes in ${u.photos} photo${u.photos === 1 ? '' : 's'}…</div>`
+    : u.status === 'failed' ? `<div class="banner2 bad"><span style="flex:1">Couldn't process these photos, try again.</span><button class="mini" data-a="dismissUpload" data-v="${u.id}">OK</button></div>`
+    : `<button class="banner2 rev" style="width:100%" data-a="push" data-v="review|${u.id}"><span style="flex:1;text-align:left"><b>${S.items.filter(i => i.uploadId === u.id && i.status === 'in_review').length} new Items to check</b><br><small>They join your Wardrobe after you check them</small></span>›</button>`).join('');
+  const shown = w.filter(i => S.wfFilter === 'all' || slotOf(i) === S.wfFilter);
+  const chips = `<div class="chips"><button class="chip ${S.wfFilter === 'all' ? 'on' : ''}" data-a="wf" data-v="all">All ${w.length}</button>${SLOTS.map(([s, l]) => { const n = w.filter(i => slotOf(i) === s).length; return n ? `<button class="chip ${S.wfFilter === s ? 'on' : ''}" data-a="wf" data-v="${s}">${l} ${n}</button>` : ''; }).join('')}</div>`;
+  const grid = `<div class="grid3">${shown.map(i => `<button class="tile ${i.excluded ? 'off' : ''}" data-a="push" data-v="item|${i.id}">${swatch(i, true)}<b>${esc(i.name)}</b>${i.excluded ? '<span class="badge">Not in Outfits</span>' : ''}</button>`).join('')}</div>`;
+  return scr('Wardrobe', banners + (w.length ? chips + grid : `<div class="center">No Items yet.</div>`),
+    { right: `<button class="chip on" data-a="picker" data-v="wardrobe">＋ Add photos</button>${avatar}`, tabs: true, scrollId: 'wardrobe' });
+}
+
+function itemScreen(id) {
+  const i = item(id); if (!i) return scr('Item', '<div class="center">Deleted.</div>', { back: 1 });
+  const d = S.draft;
+  const sel = (key, opts, allowEmpty) => `<select data-bind="draft.${key}">${allowEmpty ? `<option value="">None</option>` : ''}${opts.map(([v, l]) => `<option value="${v}" ${d[key] === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  const colourOpts = Object.keys(COLOURS).map(c => [c, nice(c)]);
+  return scr(esc(i.name), `${swatch(i, true)}
+    <label class="f">Name</label><input type="text" value="${esc(d.name)}" data-bind="draft.name">
+    <label class="f">Category (decides the slot)</label><select data-bind="draft.category">${SLOTS.map(([s, l]) => `<optgroup label="${l}">${CATEGORIES[s].map(([v, lab]) => `<option value="${v}" ${d.category === v ? 'selected' : ''}>${lab}</option>`).join('')}</optgroup>`).join('')}</select>
+    <div class="grid2"><div><label class="f">Main colour</label>${sel('primary', colourOpts)}</div><div><label class="f">Second colour</label>${sel('secondary', colourOpts, true)}</div></div>
+    <div class="grid2"><div><label class="f">Style</label>${sel('tradition', [['ethnic','Ethnic'],['western','Western'],['fusion','Fusion']])}</div><div><label class="f">Pattern</label>${sel('pattern', PATTERNS.map(p => [p, nice(p)]))}</div></div>
+    <label class="f">Description (what the stylist reads)</label><textarea rows="3" data-bind="draft.description">${esc(d.description)}</textarea>
+    <div class="switch"><div class="t">Don't use in Outfits<span>Keep it in your Wardrobe, but never style it.</span></div><button class="tog ${i.excluded ? 'on' : ''}" data-a="toggleExclude" data-v="${i.id}"></button></div>
+    <button class="btn plain" style="margin-top:16px;color:#b42318" data-a="sheet" data-v="deleteItem|${i.id}">Delete Item</button>`,
+    { back: 1, sub: CAT_LABEL[i.category], foot: `<button class="btn" data-a="saveItem" data-v="${i.id}">Save changes</button>` });
+}
+
+/* ---------- Settings ---------- */
+function settingsScreen() {
+  return scr('Settings', `
+    <h3 style="margin-top:0">Style Profile</h3>${profileFields(true)}
+    <h3>Reference Photos</h3><p class="lead" style="margin-top:-4px">1 to 3. Changes apply to images made from now on.</p>${refGrid()}
+    <h3>Stylists</h3><p class="lead" style="margin-top:-4px">${S.stylists.map(id => ST(id).name).join(', ')}</p><button class="btn plain" data-a="push" data-v="editStylists">Change Stylists</button>
+    <h3>Account</h3><div class="settings-row"><span>you@gmail.com</span><button class="link" data-a="signOut">Sign out</button></div>`,
+    { back: 1 });
+}
+
+/* ---------- sheets ---------- */
+function sheetHtml() {
+  const sh = S.sheet; if (!sh) return '';
+  let inner = '';
+  if (sh.type === 'refSource') inner = `<h3>Add a Reference Photo</h3><p class="lead">Full body, plain background.</p><button class="btn" data-a="addRef">Take a photo</button><button class="btn plain" data-a="addRef">Choose from gallery</button>`;
+  if (sh.type === 'picker') inner = `<div class="sys">Android photo picker (system screen)</div><h3>Select up to 20</h3>
+      <div class="grid3" style="grid-template-columns:repeat(4,1fr);margin:10px 0">${Array.from({ length: 24 }, (_, k) => `<button class="pick ${sh.sel.includes(k) ? 'on' : ''}" style="background:hsl(${k * 37 % 360} 30% 70%)" data-a="pick" data-v="${k}"></button>`).join('')}</div>
+      <button class="btn" data-a="pickerDone" ${sh.sel.length ? '' : 'disabled'}>Add ${sh.sel.length || ''} photo${sh.sel.length === 1 ? '' : 's'}</button><button class="btn plain" data-a="closeSheet">Cancel</button>`;
+  if (sh.type === 'fix') {
+    const d = S.draft;
+    inner = `<h3>Fix this Item</h3>${swatch(d)}
+      <label class="f">Name</label><input type="text" value="${esc(d.name)}" data-bind="draft.name">
+      <label class="f">Category (decides the slot)</label><select data-bind="draft.category">${SLOTS.map(([s, l]) => `<optgroup label="${l}">${CATEGORIES[s].map(([v, lab]) => `<option value="${v}" ${d.category === v ? 'selected' : ''}>${lab}</option>`).join('')}</optgroup>`).join('')}</select>
+      <label class="f">Main colour</label><select data-bind="draft.primary">${Object.keys(COLOURS).map(c => `<option value="${c}" ${d.primary === c ? 'selected' : ''}>${nice(c)}</option>`).join('')}</select>
+      <label class="f">Style</label><select data-bind="draft.tradition">${['ethnic','western','fusion'].map(t => `<option value="${t}" ${d.tradition === t ? 'selected' : ''}>${nice(t)}</option>`).join('')}</select>
+      <p style="font-size:12px;color:var(--mute)">If you change the category, colour or style, we rewrite the name to match unless you typed your own.</p>
+      <button class="btn" data-a="saveFix" data-v="${sh.id}">Save</button><button class="btn plain" data-a="closeSheet">Cancel</button>`;
+  }
+  if (sh.type === 'merge') {
+    const me = item(sh.id);
+    const others = S.items.filter(i => i.uploadId === me.uploadId && i.status === 'in_review' && i.id !== me.id);
+    inner = `<h3>Same piece as…</h3><p class="lead">“${esc(me.name)}” will be folded into the one you pick.</p>
+      ${others.map(o => `<button class="itemrow" style="width:100%;text-align:left" data-a="mergeInto" data-v="${me.id}|${o.id}">${swatch(o)}<div class="info"><b>${esc(o.name)}</b><span>${CAT_LABEL[o.category]}</span></div></button>`).join('')}
+      <button class="btn plain" data-a="closeSheet">Cancel</button>`;
+  }
+  if (sh.type === 'dismiss') {
+    const p = post(sh.id);
+    if (sh.step === 'reason') inner = `<h3>Dismissed. Why? <span style="font-weight:400;color:var(--mute)">(optional)</span></h3><p class="lead">This Post is hidden. Your answer shapes future Feeds.</p>
+        ${REASONS.map(([v, l]) => `<button class="opt" data-a="dismissReason" data-v="${v}">${l}</button>`).join('')}<button class="btn plain" data-a="dismissReason" data-v="">Skip</button>`;
+    else inner = `<h3>Which piece?</h3>${p.pieces.map(x => `<button class="itemrow" style="width:100%;text-align:left" data-a="dismissPiece" data-v="${x.id}">${swatch(x)}<div class="info"><b>${esc(x.name)}</b><span>${x.suggested ? 'Suggested: we won\'t suggest anything like it for 90 days' : 'Yours: we\'ll use it less'}</span></div></button>`).join('')}`;
+  }
+  if (sh.type === 'deleteItem') inner = `<h3>Delete this Item?</h3><p class="lead">It leaves your Wardrobe for good. Saved Posts keep their image.</p><button class="btn" style="background:#b42318" data-a="deleteItem" data-v="${sh.id}">Delete</button><button class="btn plain" data-a="closeSheet">Cancel</button>`;
+  const closeOnBg = sh.type === 'dismiss' ? '' : 'data-a="closeSheet"';
+  return `<div class="sheet-bg" ${closeOnBg}><div class="sheet" data-stop="1">${inner}</div></div>`;
+}
+
+/* ---------- render ---------- */
+function screenHtml() {
+  if (S.route !== 'tabs') return ONBOARD[S.route]();
+  const t = stackTop();
+  if (t) {
+    const [kind, a, b] = t.split('|');
+    if (kind === 'saved') return savedScreen();
+    if (kind === 'post') return scr('Saved Post', postCard(post(a), { inSaved: true }), { back: 1 });
+    if (kind === 'shop') return shopScreen(a, b);
+    if (kind === 'item') return itemScreen(a);
+    if (kind === 'review') return reviewScreen(a, false);
+    if (kind === 'settings') return settingsScreen();
+    if (kind === 'editStylists') return scr('Stylists', `<p class="lead">1 to 3. Changes apply from tomorrow's Feed.</p>${stylistGrid()}`, { back: 1, sub: `${S.stylists.length} of 3 chosen` });
+  }
+  return { feed: feedTab, styleme: styleMeTab, wardrobe: wardrobeTab }[S.tab]();
+}
+
+let lastKey = '';
+function render() {
+  const key = S.route + S.tab + S.stack.join('>');
+  const sc = $('#screen .scroll'); const keepTop = sc && key === lastKey ? sc.scrollTop : 0;
+  $('#screen').innerHTML = screenHtml() + sheetHtml() + (S.toast ? `<div class="toast">${esc(S.toast)}</div>` : '');
+  const sc2 = $('#screen .scroll'); if (sc2) sc2.scrollTop = keepTop;
+  if (S.tab === 'styleme' && S.route === 'tabs' && !S.stack.length) { const m = $('#sm'); m.scrollTop = m.scrollHeight; }
+  lastKey = key;
+  renderPanel();
+}
+
+function renderPanel() {
+  const b = (a, v, l, on) => `<button class="${on ? 'on' : ''}" data-a="${a}" data-v="${v}">${l}</button>`;
+  const f = S.flags;
+  $('#panel').innerHTML = `
+    <h4>Jump to</h4><div class="btns">
+      ${b('jump', 'signin', 'Sign-in')}${b('jump', 'profile', 'Style Profile')}${b('jump', 'refphotos', 'Reference Photos')}${b('jump', 'stylists', 'Stylists')}${b('jump', 'firstUpload', 'First upload')}
+      ${b('seed', '', 'Skip onboarding (sample data)')}</div>
+    <h4>Layout variants</h4><div class="btns">
+      ${b('variant', 'feed|A', 'Feed A: scroll all 5', S.variants.feed === 'A')}${b('variant', 'feed|B', 'Feed B: one at a time', S.variants.feed === 'B')}</div>
+    <div class="btns" style="margin-top:6px">${b('variant', 'review|A', 'Review A: list', S.variants.review === 'A')}${b('variant', 'review|B', 'Review B: one at a time', S.variants.review === 'B')}</div>
+    <h4>Simulate</h4><div class="btns">
+      ${b('newDay', '', '☀ Next day, 05:00 Feed')}${b('flag', 'feedFails', "Next Feed's selection fails", f.feedFails)}${b('flag', 'imagesFail', 'Next Feed: 2 images fail', f.imagesFail)}
+      ${b('flag', 'uploadFails', 'Next upload fails', f.uploadFails)}${b('flag', 'lensEmpty', 'Lens finds nothing', f.lensEmpty)}
+      ${b('flag', 'smImageFails', 'Next Style Me image fails', f.smImageFails)}${b('flag', 'smLimit', 'Style Me limit flag (5/day)', f.smLimit)}
+      ${b('reset', '', 'Reset everything')}</div>
+    <h4>State</h4><pre>${esc(JSON.stringify({
+      screen: S.route === 'tabs' ? (S.stack.length ? S.stack.join(' › ') : 'tab:' + S.tab) : S.route,
+      profile: S.profile, referencePhotos: S.refPhotos.length, stylists: S.stylists,
+      wardrobe: wardrobe().length + ' Items (' + wardrobe().filter(i => i.excluded).length + " don't use)",
+      inReview: S.items.filter(i => i.status === 'in_review').length,
+      uploads: S.uploads.map(u => u.status).join(', ') || '-',
+      day: S.day, feed: S.feed.status + (S.feed.status === 'ok' ? ` · ${S.feed.posts.map(post).filter(p => !p.dismissed).length} live, ${S.feed.posts.map(post).filter(p => p.dismissed).length} dismissed` : ''),
+      saved: S.posts.filter(p => p.saved).length,
+      dismissals: S.posts.filter(p => p.dismissed).map(p => p.reason || '(no reason)'),
+      styleMe: `${S.sm.messages.length} messages, ${S.sm.used} images today`,
+    }, null, 1))}</pre>`;
+}
+
+/* ---------- actions ---------- */
+const A = {
+  go: v => { S.route = v; },
+  back: () => { if (S.route !== 'tabs') { const order = ['signin','profile','refphotos','stylists','firstUpload']; S.route = order[Math.max(order.indexOf(S.route) - 1, 0)]; } else S.stack.pop(); S.draft = null; },
+  gender: v => { S.profile.gender = v; S.profile.clothes = v === 'male' ? 'menswear' : v === 'female' ? 'womenswear' : null; },
+  clothes: v => { S.profile.clothes = v; },
+  budget: v => { S.profile.budget = v; },
+  sheet: v => { const [type, id] = v.split('|'); S.sheet = { type, id }; },
+  closeSheet: () => { S.sheet = null; },
+  addRef: () => { if (S.refPhotos.length < 3) S.refPhotos.push(nid('r')); S.sheet = null; if (S.route === 'tabs') toast('Used for images made from now on'); },
+  removeRef: v => { if (S.route === 'tabs' && S.refPhotos.length === 1) return toast('Keep at least one Reference Photo. Add a new one first.'); S.refPhotos.splice(+v, 1); },
+  toggleStylist: v => {
+    const i = S.stylists.indexOf(v);
+    if (i >= 0) { if (S.route === 'tabs' && S.stylists.length === 1) return toast('Keep at least one Stylist'); S.stylists.splice(i, 1); }
+    else if (S.stylists.length >= 3) return toast('Up to 3 Stylists. Remove one first.');
+    else S.stylists.push(v);
+    if (S.route === 'tabs') toast("Changes apply from tomorrow's Feed");
+  },
+  picker: v => { S.sheet = { type: 'picker', sel: [], ctx: v }; },
+  pick: v => { const s = S.sheet.sel, k = +v, i = s.indexOf(k); if (i >= 0) s.splice(i, 1); else if (s.length >= 20) toast('Up to 20 photos per upload'); else s.push(k); },
+  pickerDone: () => { const { sel, ctx } = S.sheet; S.sheet = null; startUpload(sel.length, ctx === 'onboard'); if (ctx !== 'onboard') { S.tab = 'wardrobe'; S.stack = []; } },
+  fix: v => { S.draft = { ...item(v) }; S.sheet = { type: 'fix', id: v }; },
+  saveFix: v => { const i = item(v), d = S.draft; const typed = d.name !== i.name; const changed = ['category','primary','tradition'].some(k => d[k] !== i[k]);
+    Object.assign(i, { category: d.category, primary: d.primary, tradition: d.tradition, name: d.name, nameByUser: i.nameByUser || typed });
+    if (changed && !i.nameByUser) i.name = nice(i.primary) + ' ' + lower(CAT_LABEL[i.category].split(' /')[0]);
+    i.checked = true; S.sheet = null; S.draft = null; },
+  mergeStart: v => { S.sheet = { type: 'merge', id: v }; },
+  mergeInto: v => { const [from, to] = v.split('|'); S.items = S.items.filter(i => i.id !== from); S.sheet = null; toast('Merged into ' + item(to).name); },
+  delReview: v => { S.items = S.items.filter(i => i.id !== v); },
+  checkItem: v => { item(v).checked = true; },
+  uncheck: v => { item(v).checked = false; },
+  finishReview: v => {
+    const list = S.items.filter(i => i.uploadId === v && i.status === 'in_review');
+    list.forEach(i => { i.status = 'in_wardrobe'; });
+    S.uploads.find(u => u.id === v).status = 'done';
+    if (S.route === 'review') { S.route = 'tabs'; S.tab = 'feed'; S.stack = []; startFirstFeed(); }
+    else { S.stack.pop(); toast(`Added ${list.length} Items to your Wardrobe`); }
+  },
+  tab: v => { S.tab = v; S.stack = []; },
+  push: v => { S.stack.push(v); const [k, id] = v.split('|'); if (k === 'item') S.draft = { ...item(id) }; },
+  save: v => { const p = post(v); p.saved = !p.saved; p.savedAt = p.saved ? Date.now() : 0; toast(p.saved ? 'Saved' : 'Removed from Saved'); },
+  dismiss: v => { const p = post(v); p.dismissed = true; S.sheet = { type: 'dismiss', id: v, step: 'reason' }; },
+  dismissReason: v => { if (v === 'dislike_piece') { S.sheet.step = 'piece'; return; } post(S.sheet.id).reason = v || null; S.sheet = null; toast(v ? 'Thanks. Future Feeds will take this into account.' : 'Dismissed'); },
+  dismissPiece: v => { const p = post(S.sheet.id); p.reason = 'dislike_piece'; p.piece = v; S.sheet = null; toast('Thanks. Future Feeds will take this into account.'); },
+  feedPage: v => { S.feedIdx += +v; },
+  shop: v => { S.stack.push('shop|' + v); },
+  openLink: v => toast(`Opens ${v} in the browser`),
+  smSend: () => { const inp = $('#smInput'); const t = inp && inp.value.trim(); if (!t) return; S.sm.messages.push({ kind: 'user', body: t }); S.sm.pending = true; setTimeout(() => { smReply(); S.sm.pending = false; render(); }, 1400); },
+  smExample: v => { S.sm.messages.push({ kind: 'user', body: v }); S.sm.pending = true; setTimeout(() => { smReply(); S.sm.pending = false; render(); }, 1400); },
+  smNew: () => { const m = S.sm.messages; if (m.length && m[m.length - 1].kind !== 'divider') m.push({ kind: 'divider' }); },
+  wf: v => { S.wfFilter = v; },
+  toggleExclude: v => { const i = item(v); i.excluded = !i.excluded; toast(i.excluded ? "Won't be used in Outfits" : 'Back in Outfits'); },
+  saveItem: v => { const i = item(v), d = S.draft; Object.assign(i, { ...d, nameByUser: i.nameByUser || d.name !== i.name, excluded: i.excluded }); S.stack.pop(); S.draft = null; toast('Saved'); },
+  deleteItem: v => { S.items = S.items.filter(i => i.id !== v); S.sheet = null; S.stack.pop(); toast('Item deleted'); },
+  dismissUpload: v => { S.uploads = S.uploads.filter(u => u.id !== v); },
+  signOut: () => { const v = S.variants; S = fresh(); S.variants = v; },
+  // panel
+  jump: v => { if (S.route === 'tabs' || v === 'signin') { const vv = S.variants; S = fresh(); S.variants = vv; } S.route = v; S.stack = []; S.sheet = null; },
+  seed: () => seed(),
+  variant: v => { const [k, x] = v.split('|'); S.variants[k] = x; const u = new URL(location); u.searchParams.set(k, x); history.replaceState(null, '', u); },
+  newDay: () => { if (S.route !== 'tabs') return toast('Finish onboarding first'); S.day++; makeFeed(); S.tab = 'feed'; S.stack = []; if (S.flags.smLimit) S.sm.used = 0; },
+  flag: v => { S.flags[v] = v === 'imagesFail' ? (S.flags[v] ? 0 : 2) : !S.flags[v]; },
+  reset: () => { const v = S.variants; S = fresh(); S.variants = v; },
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]');
+  if (!el || el.disabled) return;
+  if (el.classList.contains('sheet-bg') && e.target !== el) return; // clicks inside the sheet don't close it
+  A[el.dataset.a](el.dataset.v);
+  render();
+});
+document.addEventListener('change', e => {
+  const k = e.target.dataset.bind; if (!k) return;
+  if (k.startsWith('draft.')) { S.draft[k.slice(6)] = e.target.value; if (S.sheet && S.sheet.type === 'fix') render(); return; }
+  if (k === 'gender') A.gender(e.target.value); else S.profile[k] = e.target.value;
+  render();
+});
+document.addEventListener('input', e => { const k = e.target.dataset.bind; if (k === 'height') S.profile.height = e.target.value; else if (k && k.startsWith('draft.')) S.draft[k.slice(6)] = e.target.value; });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'smInput') { A.smSend(); render(); } });
+render();
+</script>
+</body>
+</html>
