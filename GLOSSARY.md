@@ -26,6 +26,10 @@ _Avoid_: Outfit (for a single piece), garment, clothing piece, product
 All of a User's Items.
 _Avoid_: Closet, collection, inventory
 
+**Upload**:
+One batch of camera-roll photos the User adds at once. The Items found in it wait for the User's review before they join the Wardrobe.
+_Avoid_: Import, scan
+
 ### Styling
 
 **Outfit**:
@@ -37,7 +41,7 @@ The part of an Outfit a piece fills: top, bottom, one-piece, footwear, outer lay
 _Avoid_: Type, position
 
 **Suggested Item**:
-A piece the AI recommends that isn't in the User's Wardrobe, shown with where to buy it.
+A piece the AI puts in an Outfit that isn't in the User's Wardrobe. In the Feed it comes with places to buy something similar.
 _Avoid_: Product, recommendation, missing item
 
 **Stylist**:
