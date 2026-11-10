@@ -17,7 +17,7 @@ There are exactly two environments, **`local`** and **`hosted`**. These names ar
 | Nano Banana 2.1 | **Never.** Uses the fake image provider | Real calls, paid key |
 | `image_budget.cap` (seed) | 1000 | 30 |
 
-Automated tests are separate from both columns. Whether they call any model is decided in [What do the minimal tests cover, and how are model calls kept out?](https://github.com/suyashpatel98/WearAI/issues/49). Tests seed `cap = 0`.
+Automated tests are separate from both columns and never call a model. See [Tests](#tests).
 
 The second Supabase Free project slot stays unused. There's no hosted dev project.
 
@@ -135,7 +135,7 @@ The developer, agents and CI share one set of commands: **mise tasks**, run as `
 | `fix` | Runs `prettier --write` and `expo lint --fix` |
 | `test` | Runs everything: `check`, `test:db`, `test:functions`, `expo export --platform android` and `expo install --check` |
 | `test:db` | pgTAP through `supabase test db` against local |
-| `test:functions` | `deno test` on the Edge Function handlers |
+| `test:functions` | `deno test --allow-net=127.0.0.1` on the Edge Function handlers. There are none yet, so it passes trivially |
 | `db:new <name>` | `supabase migration new <name>` |
 | `db:reset` | Rebuilds local from the migrations and the seed, then runs `db:types`. It's the only way to apply migrations locally |
 | `db:types` | Regenerates `supabase/functions/_shared/database.types.ts` from local |
@@ -185,3 +185,47 @@ If a step fails, `setup` stops with the step's name and the command to run by ha
 - The four to know: `setup`, `check`, `test`, `db:reset`.
 - **Never run a `:hosted` task except `logs:hosted`.**
 - How to test: run `check` while iterating, `test` before opening a PR, and `test:db` after any change to a migration or policy.
+
+## Tests
+
+Decided in [What do the minimal tests cover, and how are model calls kept out?](https://github.com/suyashpatel98/WearAI/issues/49).
+
+The only User is the developer, and the goal is an app that can be tried on the phone. So the automated tests guard just two things: **an app that won't build** and **an image budget that fails open**. Everything else is checked by using the app.
+
+### What's automated
+
+| Guards against | Check | Command |
+|---|---|---|
+| Type errors, lint errors, functions that don't typecheck | `tsc --noEmit`, `expo lint`, `deno check`, `deno lint`, `prettier --check` | `check` |
+| An app that won't bundle | `expo export --platform android` | `test` |
+| Packages that don't match the Expo SDK | `expo install --check` | `test` |
+| An image budget that fails open | **One pgTAP test.** In its rolled-back transaction it sets `used = cap - 1`. The first reservation (`update image_budget set used = used + 1 where used < cap returning used`) returns a row. The second returns none and leaves `used` unchanged | `test:db` |
+
+### Not automated, on purpose
+
+- **RLS and Storage leak tests.** Only one User exists. They're out of scope for this effort and must be written before a second person signs in.
+- **Edge Function tests.** There are none for now. `check` still typechecks and lints every function.
+- **An Android end-to-end test (Maestro on an emulator).** Installing each build on the OnePlus 7T is the smoke test. Revisit only if start-up crashes reach the phone that `expo export` didn't catch.
+- **Feed limits, Style Me limits, Stylist rotation, UI logic.** These are product behaviour, not serious mistakes. No `jest-expo`.
+
+### No model calls in tests
+
+No automated test calls a real model: not Nano Banana, and not the free Gemini Flash or SAM either. Real calls are slow, give different answers each run, and use up free quota. Real Flash and SAM calls only happen when the developer uses the app against `local` or `hosted`.
+
+When the first Edge Function test is written, it must:
+
+- run with no model keys (`test:functions` loads no env file, and CI has no model keys),
+- run under `deno test --allow-net=127.0.0.1`, so a real call fails with a permission error,
+- stub `fetch` so it throws on any URL the test didn't expect.
+
+### Phone checklist for a hosted APK
+
+Before trusting a new standalone APK:
+
+1. The app launches, and there's **no `LOCAL` badge**.
+2. Google sign-in works.
+3. The Wardrobe loads with its existing Items.
+4. One Upload reaches `in_review` with Items detected. Flash and SAM are free.
+5. The existing Feed and its Posts load.
+
+**Don't press Generate Feed (3 images) or Style Me (1 image) as a routine check.** Each spends part of the 30-image budget. Try those flows on `local`, where the image provider is `fake`. Press them on `hosted` only when the build changed the image path.
