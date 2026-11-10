@@ -1,6 +1,6 @@
 # Data model
 
-The Supabase Postgres tables, Storage layout and row-level security for the MVP. Decided in [What is the data model?](https://github.com/suyashpatel98/WearAI/issues/31). Item and Suggested Item fields come from [`item-attributes.md`](./item-attributes.md); Stylist briefs from [`stylists.md`](./stylists.md).
+The Supabase Postgres tables, Storage layout and row-level security for the MVP. Decided in [What is the data model?](https://github.com/suyashpatel98/WearAI/issues/31), amended by [What may the MVP spend, and how is it held there?](https://github.com/suyashpatel98/WearAI/issues/39) and [How does the User generate a Feed without the daily Cron?](https://github.com/suyashpatel98/WearAI/issues/40). Item and Suggested Item fields come from [`item-attributes.md`](./item-attributes.md); Stylist briefs from [`stylists.md`](./stylists.md).
 
 ## Principles
 
@@ -62,7 +62,6 @@ create type message_kind  as enum ('user', 'assistant', 'divider');
 | `budget_band` | `price_band` | |
 | `height_cm` | `int` null | |
 | `onboarded_at` | `timestamptz` null | |
-| `first_feed_at` | `timestamptz` null | set when the first Feed is triggered; while null, finishing review triggers it |
 
 Name and email come from `auth.users` (Google). No 18+ column: legal work is out of scope.
 
@@ -81,7 +80,7 @@ The app enforces 1–3 per User. Replacing a photo deletes one row and inserts a
 |---|---|---|
 | `user_id`, `stylist_id → stylists` | pk | |
 
-The app enforces 1–3. The daily split rotates by date (day number mod 2 or 3), so no rotation state is stored. Changes apply from the next Feed because the Feed job reads this table at 05:00.
+The app enforces 1–3. Each Feed's 3 Posts are split 3 / 2 + 1 / 1 + 1 + 1. With 2 active, the Stylist that gets 2 is picked by the User's count of `ok` Feed runs mod 2, so no rotation state is stored. Changes apply from the next Feed, because the Feed function reads this table on each press.
 
 ## The Wardrobe
 
@@ -93,7 +92,7 @@ The app enforces 1–3. The daily split rotates by date (day number mod 2 or 3),
 | `status` | `upload_status` | `processing` → `in_review` → `done`, or `failed` |
 | `photo_paths` | `text[]` | up to 20 originals, kept |
 
-Flow: the client puts the photos in Storage, inserts the row (`processing`), then calls the upload Edge Function with its id. The function sets `in_review` (Items inserted) or `failed`. The client sets `done` when the User finishes review; if `profiles.first_feed_at` is null, that also triggers the first Feed.
+Flow: the client puts the photos in Storage, inserts the row (`processing`), then calls the upload Edge Function with its id. The function sets `in_review` (Items inserted) or `failed`. The client sets `done` when the User finishes review. That doesn't start a Feed.
 
 **`items`**
 
@@ -123,10 +122,10 @@ Review actions: **confirm** sets `in_wardrobe`; **fix** updates fields; **merge*
 |---|---|---|
 | `id` | `uuid` pk | |
 | `caption` | `text` | e.g. "Your indigo kurta with ivory chinos and tan kolhapuris (suggested)" |
-| `image_status` | `image_status` | `ready`, `failed`, or `over_limit` (Style Me daily limit reached) |
+| `image_status` | `image_status` | `ready`, `failed`, or `over_limit` (the image budget is used up, or the Style Me daily limit is reached) |
 | `image_path` | `text` null | set only when `ready` |
 
-Calls are interactive, so a row is written after generation finishes and there's no `pending` state. The Feed job writes an Outfit only when its image is `ready`; Style Me always writes one so the thread can show the image, the error, or the limit message.
+Calls are interactive, so a row is written after generation finishes and there's no `pending` state. The Feed function writes an Outfit only when its image is `ready`; Style Me always writes one so the thread can show the image, the error, or the limit message.
 
 **`outfit_items`**: the Wardrobe Items in an Outfit.
 
@@ -141,25 +140,25 @@ Calls are interactive, so a row is written after generation finishes and there's
 |---|---|---|
 | `id` | `uuid` pk | |
 | `outfit_id` | → `outfits` on delete cascade | |
-| `category` … `description` | as on `items` | same fields, no `status`, `crop_path` semantics below |
+| `category` … `description` | as on `items` | same fields, no `status` or `crop_path` |
 | `price_band` | `price_band` | |
-| `crop_path` | `text` null | SAM 3 cutout from the generated image, made on the first buy-link tap (Feed only) |
-| `buy_links` | `jsonb` null | cached Lens results or fallback retailer search links; never expires |
-| `buy_links_fetched_at` | `timestamptz` null | |
 
-Style Me Suggested Items never fill `crop_path` or `buy_links`.
+Buy links aren't stored. The app builds retailer search links (Myntra, Ajio, Amazon.in, Flipkart) from the Suggested Item's name and fields. There is no Lens lookup and no SAM 3 cutout. Style Me shows no buy links.
 
 ## The Feed
 
-**`feed_runs`**: one per User per IST day.
+**`feed_runs`**: one row per press of "Generate Feed".
 
 | column | type | notes |
 |---|---|---|
-| `user_id`, `feed_date date` | pk | |
+| `id` | `uuid` pk | |
+| `feed_date` | `date` | `ist_today` when pressed |
 | `status` | `feed_status` | |
-| `error` | `text` null | shown on the Feed tab when `failed` |
+| `error` | `text` null | shown on the Feed tab when the latest run `failed` |
 
-The 05:00 cron skips Users who already have a row for `ist_today` (e.g. a first Feed made at 02:00), so nobody gets two Feeds in a day. The Feed tab reads the latest run: `failed` shows its error; `ok` shows that date's Posts that aren't dismissed, ordered by `position`. If some images failed, there are simply fewer than 5 Posts.
+The Feed function first checks the User's `ok` runs for `ist_today`. At 3 it refuses, and the app has already disabled the button. A `failed` run (selection failed, so no images) doesn't count, so pressing again is the retry. While a Feed is being made, the app disables the button, so a double tap can't start two Feeds.
+
+The Feed tab shows today's Posts that aren't dismissed, ordered by the run's `created_at` descending, then `position`. If the latest run is `failed`, its error shows above them. If some images failed, that run simply has fewer than 3 Posts.
 
 **`posts`**
 
@@ -167,9 +166,10 @@ The 05:00 cron skips Users who already have a row for `ist_today` (e.g. a first 
 |---|---|---|
 | `id` | `uuid` pk | |
 | `outfit_id` | `uuid` unique → `outfits` | |
+| `feed_run_id` | `uuid` → `feed_runs` | |
 | `feed_date` | `date` | |
 | `stylist_id` | `text` → `stylists` | the Stylist tag |
-| `position` | `int` 1–5 | |
+| `position` | `int` 1–3 | |
 | `saved_at` | `timestamptz` null | unsave sets it back to null |
 | `dismissed_at` | `timestamptz` null | no undo |
 | `dismiss_reason` | `dismiss_reason` null | optional even when dismissed |
@@ -195,6 +195,24 @@ The thread is every row ordered by `created_at`. The model's context is the rows
 
 **Daily image limit:** the flag is the Edge Function environment variable `STYLE_ME_DAILY_LIMIT` (unset means off, no limit). When set, the count is the User's Style Me Outfits created on `ist_today` with `image_status = 'ready'`; failed generations don't count and no counter is stored.
 
+## Image budget
+
+**`image_budget`**: a single row, not owned by a User, that caps the total number of Nano Banana calls. It is seeded with `used = 0, cap = 30`.
+
+| column | type | notes |
+|---|---|---|
+| `id` | `boolean` pk default `true`, check `id` | keeps it to one row |
+| `used` | `int` | |
+| `cap` | `int` | edit the row to raise it |
+
+Before every image call, Feed or Style Me, the Edge Function reserves a slot:
+
+```sql
+update image_budget set used = used + 1 where used < cap returning used;
+```
+
+No row returned means the budget is used up: the Outfit is `over_limit` and the model isn't called. A failed call keeps its slot. The app reads `used` and `cap` through an Edge Function, to show "Image budget used up (30 of 30)". The table has no client access.
+
 ## History queries
 
 All Feed-only: Style Me never affects selection.
@@ -210,6 +228,12 @@ group by oi.item_id;
 select p.id, array_agg(oi.item_id order by oi.item_id) as item_set
 from posts p join outfit_items oi using (outfit_id)
 where p.user_id = $user and p.feed_date > ist_today - 60
+group by p.id;
+
+-- Today's earlier Outfits, so a new Feed doesn't repeat a top + bottom (or one-piece) from today
+select p.id, array_agg(oi.item_id) as item_set
+from posts p join outfit_items oi using (outfit_id)
+where p.user_id = $user and p.feed_date = ist_today
 group by p.id;
 
 -- Kinds of Suggested Item used this week (at most once a week)
@@ -239,7 +263,7 @@ Deleting an Item drops it from past sets, so a past set can shrink and block a s
   - `items`: update (review, edits, switch), delete
   - `posts`: update (save, unsave, dismiss)
   - `style_me_messages`: insert (`divider` only, for "New conversation")
-- **Everything else** is written by Edge Functions with the service role: Items from detection, Outfits, Suggested Items, buy links, Posts, Feed runs and Style Me user/assistant messages.
+- **Everything else** is written by Edge Functions with the service role: Items from detection, Outfits, Suggested Items, Posts, Feed runs, the image budget and Style Me user/assistant messages.
 - **No column-level guards:** the client could overwrite other columns on its own rows. Accepted for the MVP.
 - **`categories`, `stylists`:** `select` for `authenticated`; no writes.
 
@@ -251,8 +275,7 @@ One private bucket, `user-media`, with every path under `{user_id}/`:
 {user_id}/reference/{id}.jpg
 {user_id}/uploads/{upload_id}/{n}.jpg
 {user_id}/crops/{item_id}.png
-{user_id}/outfits/{outfit_id}.png
-{user_id}/suggested/{suggested_item_id}.png
+{user_id}/outfits/{outfit_id}.jpg
 ```
 
 Policy: `(storage.foldername(name))[1] = auth.uid()::text` for select and insert. Images are served through signed URLs. Stylist sample images sit in a separate public-read bucket, `stylists`.

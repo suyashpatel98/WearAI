@@ -51,7 +51,7 @@ _Avoid_: Persona, style, theme, filter
 ### Surfaces
 
 **Feed**:
-The tab showing a small, fixed set of Posts (five) generated for the User from their active Stylists. It is not an endless scroll.
+The tab showing the Posts generated for the User from their active Stylists. Each press of "Generate Feed" adds three, up to three times a day. It is not an endless scroll.
 _Avoid_: Timeline, explore, infinite feed
 
 **Post**:

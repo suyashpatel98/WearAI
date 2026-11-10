@@ -22,14 +22,23 @@ A linear flow shown once, until the first review is finished. Each step's Contin
    - Height in cm, optional.
 3. **Reference Photos** (step 2 of 4): three slots, at least one filled. Each slot offers "Take a photo" or "Choose from gallery". A tip explains what makes a good photo: whole body, good light, plain background, fitted clothes, front view (side view optional).
 4. **Stylists** (step 3 of 4): the ten Stylists in a two-column grid. Each card has the sample image matching the User's clothes setting (both images for "Both"), the name and the tagline. Nothing is pre-selected; pick 1 to 3. Choosing a fourth shows "Up to 3 Stylists. Remove one first."
-5. **First upload** (step 4 of 4): explains what photos to pick, then opens the Android photo picker (up to 20). **It can't be skipped**, because the first Feed needs at least one Item.
+5. **First upload** (step 4 of 4): explains what photos to pick, then opens the Android photo picker (up to 20). **It can't be skipped**, because the first Feed needs at least one Item. Photos are resized on the phone before upload (longest side about 1600 px, JPEG).
 6. **Processing:** "Finding your clothes in N photos…", which takes about a minute with the app open. On failure: "Couldn't process these photos, try again." with a button that opens the picker again.
-7. **Review** (see [Review](#review)). Pressing "Add N Items to Wardrobe" finishes onboarding, triggers the first Feed and lands on the Feed tab.
+7. **Review** (see [Review](#review)). Pressing "Add N Items to Wardrobe" finishes onboarding and lands on the Feed tab's empty state. No Feed starts until the User presses "Generate Feed".
 
 ## Feed
 
 - **Header:** "Today", the date, "★ Saved" (with the count), avatar.
-- **Layout:** all of today's Posts in one vertical scroll, ending with "That's today's N. New Posts tomorrow at 5 AM."
+- **Generate Feed button**, at the top of the Feed. Each successful press makes 3 new Posts, up to 3 times per IST day:
+
+  | State | Button |
+  |---|---|
+  | Presses left today | "Generate Feed · N of 3 left today" |
+  | A Feed is being made | "Making your Feed…" (disabled, with a spinner) |
+  | No presses left today | "3 of 3 used today, more at midnight" (disabled) |
+  | Image budget used up | "Image budget used up (30 of 30)" (disabled) |
+
+- **Layout:** all of today's Posts in one vertical scroll, newest Feed first, ending with "That's today's N."
 - **Each Post:**
   - the generated image, marked "AI-generated"
   - the Stylist tag
@@ -38,19 +47,19 @@ A linear flow shown once, until the first review is finished. Each step's Contin
   - when the Outfit has Suggested Items, a **"Buy something similar"** section with one row per Suggested Item: its swatch, name and price band.
 - **Dismiss:** the Post hides straight away and can't be undone. A sheet asks "Dismissed. Why? (optional)" with the four reasons and "Skip". "Don't like this piece" opens a second step listing the Outfit's pieces. A Suggested Item row says no similar suggestions for 90 days; a Wardrobe Item row says it will be used less.
 - **States:**
-  - First Feed: "Making your first Feed…" until it arrives.
-  - Selection failed: "No Feed today." plus the error, "Your next Feed arrives tomorrow at 5 AM", and a link to Style Me. No retry button.
-  - Some images failed: fewer Posts, with no message.
-  - Everything dismissed: "That's everything for today. New Posts tomorrow at 5 AM."
-- **No notifications.** A new Feed is simply there when the User opens the app.
+  - No Posts yet today (including right after onboarding): "No Posts yet today." with the button.
+  - Selection failed: an error card above the Posts with the error. The press doesn't count, so the button stays available.
+  - Some images failed: fewer Posts from that press, with no message.
+  - Everything dismissed: "That's everything for now." with the button.
+- **No notifications.**
 
 ### Buy links
 
 Tapping a Suggested Item row opens a screen headed "Buy something similar":
 - the piece's swatch, name and price band
-- a spinner ("Looking for similar pieces at Indian shops…") while the lookup runs on that first tap; later taps use the cached results
-- results labelled "Similar, not exact", each with shop name, title and price. Tapping one opens it in the browser.
-- if Lens finds nothing: "We couldn't find close matches. Search these shops instead:" with search links for Myntra, Ajio and Amazon.in.
+- "Search these shops:" with search links for Myntra, Ajio, Amazon.in and Flipkart, built from the piece's name, colour and category. Tapping one opens it in the browser.
+
+There is no in-app product lookup in the MVP (see [What may the MVP spend, and how is it held there?](https://github.com/suyashpatel98/WearAI/issues/39)).
 
 ### Saved list
 
@@ -64,6 +73,7 @@ A two-column grid of saved Posts, newest save first, each with its image and cap
 - **A reply with an Outfit** shows the text, the image marked "AI-generated", and the caption line. Nothing in it is tappable and there are no buy links or saving.
   - Image failed: "Couldn't make this image." with the caption still shown.
   - Daily limit reached: the caption without an image, and "You've used today's 5 images, more at midnight."
+  - Image budget used up: the caption without an image, and "Image budget used up (30 of 30)."
 - **Input:** a single-line text field and Send. Both are disabled while a reply is pending, which shows a spinner bubble.
 
 ## Wardrobe
@@ -102,5 +112,5 @@ Used for the first upload during onboarding and for every later Upload from the 
 
 - **Style Profile:** gender (and the clothes follow-up for "Prefer not to say"), budget band, height. Each saves as soon as it changes.
 - **Reference Photos:** the same three slots. At least one must stay: a User adds a new photo before removing their last one. New photos apply to images made from then on.
-- **Stylists:** the active ones and "Change Stylists", which opens the same grid. At least one must stay. Changes apply from tomorrow's Feed, and the screen says so.
+- **Stylists:** the active ones and "Change Stylists", which opens the same grid. At least one must stay. Changes apply from the next Feed, and the screen says so.
 - **Account:** the Google email and "Sign out".
