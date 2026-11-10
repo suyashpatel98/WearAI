@@ -46,7 +46,7 @@ The second Supabase Free project slot stays unused. There's no hosted dev projec
 
 ### Guard rails
 
-- Every command targets `local` unless its name says `hosted` (e.g. `deploy-hosted`). Command names are decided in [What is the single command surface?](https://github.com/suyashpatel98/WearAI/issues/48).
+- Every command targets `local` unless its name ends in `:hosted` (e.g. `deploy:hosted`). See [Command surface](#command-surface).
 - Each `hosted` command first prints the project ref and what it will change. Run interactively, it asks for confirmation. CI passes `--yes` itself.
 - **Agents never run commands that change `hosted`**: migrations, function deploys, or setting secrets. `AGENTS.md` says so. Agents may run read-only `hosted` commands, such as reading function logs. This backs up the Supabase CLI v3 default, which only reaches `hosted` with `--remote --yes`.
 
@@ -110,3 +110,78 @@ One package at the repo root, with no workspaces. A second package earns workspa
 - **Lint:** `expo lint` (ESLint with Expo's config) for the app, and `deno lint` for the functions. No Biome.
 - **Format:** Prettier, with its defaults, for every TS/JS/JSON/Markdown file, functions included, so the repo has one style. `deno fmt` isn't used, and SQL isn't formatted.
 - **Editor:** the committed `.vscode/settings.json` enables the Deno extension only for `supabase/functions` (`deno.enablePaths`) and makes Prettier the default formatter with format on save. `.vscode/extensions.json` recommends the Deno, ESLint and Prettier extensions.
+
+## Command surface
+
+Decided in [What is the single command surface?](https://github.com/suyashpatel98/WearAI/issues/48).
+
+The developer, agents and CI share one set of commands: **mise tasks**, run as `mise run <task>`. `mise tasks` lists them with their descriptions and is the source of truth for the list. `mise run` uses the versions pinned in `mise.toml`, even in a shell where mise isn't activated, which is the kind of shell agents and CI use. One-line tasks live inline in `mise.toml`, and multi-step ones are file tasks in `mise-tasks/`. `package.json` scripts are never a second command surface.
+
+### Names
+
+- Names follow `area:verb` (`db:reset`, `test:db`), so `mise tasks` groups them by area.
+- **Every command targets `local` unless its name ends in `:hosted`.** No other command reaches hosted.
+
+### Commands
+
+| Command | Does |
+|---|---|
+| `setup` | Bootstraps or repairs the machine. See [setup](#setup) |
+| `up` / `down` | Start or stop Colima and the local Supabase stack |
+| `dev` | Starts Metro with `APP_ENV=local`, then runs `adb reverse` for the stack's ports |
+| `dev:hosted` | Starts Metro with `APP_ENV=hosted`. It only reads hosted, but it carries the suffix so the naming rule has no exceptions |
+| `android` | Runs `expo run:android`: builds the development build and installs it on the connected phone. If `adb devices` shows nothing, it fails with steps to enable USB debugging |
+| `check` | Fast and needs no Docker: typechecks the app (`tsc --noEmit`), runs `deno check`, `expo lint`, `deno lint` and `prettier --check` |
+| `fix` | Runs `prettier --write` and `expo lint --fix` |
+| `test` | Runs everything: `check`, `test:db`, `test:functions`, `expo export --platform android` and `expo install --check` |
+| `test:db` | pgTAP through `supabase test db` against local |
+| `test:functions` | `deno test` on the Edge Function handlers |
+| `db:new <name>` | `supabase migration new <name>` |
+| `db:reset` | Rebuilds local from the migrations and the seed, then runs `db:types`. It's the only way to apply migrations locally |
+| `db:types` | Regenerates `supabase/functions/_shared/database.types.ts` from local |
+| `deploy:hosted` | Ships migrations and functions to hosted. What it does is decided in [How do changes reach hosted Supabase and the phone?](https://github.com/suyashpatel98/WearAI/issues/52) |
+| `apk:hosted` | Builds the standalone APK, which always targets hosted. Also decided in that ticket |
+| `logs:hosted` | Reads Edge Function logs. Read-only |
+
+Not commands:
+- `lint` and `typecheck`: `check` covers both.
+- `db:migrate`: use `db:reset`.
+- Setting hosted secrets: decided in [Where do secrets live, and how do they flow in a public repo?](https://github.com/suyashpatel98/WearAI/issues/50).
+- What CI runs: decided in [What runs in CI on a PR, and what protects main?](https://github.com/suyashpatel98/WearAI/issues/51). CI calls these same tasks rather than its own steps.
+
+### Which environment a command targets
+
+Every command that talks to Supabase prints one line before it does anything, such as `▸ local  http://127.0.0.1:54321` or `▸ hosted  wearai (ref …)`. `:hosted` commands that change hosted then print their plan and ask for confirmation, as set out in [Guard rails](#guard-rails). Commands that only touch files (`check`, `fix`, `db:new`) print no banner.
+
+### `setup`
+
+On a fresh Mac with Homebrew, the only manual line is:
+
+```sh
+brew install mise && mise trust && mise run setup
+```
+
+`setup` runs these steps in order. Each step can be re-run, so `setup` also repairs a broken machine:
+
+1. Checks for Homebrew. If it's missing, it exits with the install URL.
+2. `brew install colima docker android-commandlinetools android-platform-tools`.
+3. `mise install`, then `pnpm install`.
+4. Accepts the Android SDK licences and installs the fixed `sdkmanager` package list.
+5. Copies `.env.local.example` to `.env.local` if `.env.local` is missing. It never overwrites one.
+6. `up`, then `db:reset`.
+
+It **doesn't**:
+- Uninstall anything. If it finds Docker Desktop or a global `supabase`, it prints the exact command to remove it and carries on.
+- Touch hosted, secrets or Google Cloud.
+- Set up the phone.
+
+If a step fails, `setup` stops with the step's name and the command to run by hand.
+
+### `AGENTS.md`
+
+`AGENTS.md` gets a short **Commands** section, and the task descriptions carry the rest, so the list lives in one place:
+
+- Run commands with `mise run <task>`. `mise tasks` lists them all.
+- The four to know: `setup`, `check`, `test`, `db:reset`.
+- **Never run a `:hosted` task except `logs:hosted`.**
+- How to test: run `check` while iterating, `test` before opening a PR, and `test:db` after any change to a migration or policy.
