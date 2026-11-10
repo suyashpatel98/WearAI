@@ -35,7 +35,7 @@ The second Supabase Free project slot stays unused. There's no hosted dev projec
   - `fake` returns a fixed placeholder JPEG with no network call. It is the only value `local` ever uses. There is no flag to spend real images locally. To get a real image, use `hosted`.
   - `nano-banana` fails loudly if its key is missing. A missing key never falls back to `fake`.
 - Every image request reserves an `image_budget` slot first, in both environments, and the provider is called only after the reservation. So the "Image budget used up" paths can be tried locally by editing the one row.
-- Where each key is stored and how it reaches each environment is decided in [Where do secrets live, and how do they flow in a public repo?](https://github.com/suyashpatel98/WearAI/issues/50).
+- Where each key is stored and how it reaches each environment: see [Secrets](#secrets).
 
 ### Which environment the app talks to
 
@@ -142,11 +142,11 @@ The developer, agents and CI share one set of commands: **mise tasks**, run as `
 | `deploy:hosted` | Ships migrations and functions to hosted. What it does is decided in [How do changes reach hosted Supabase and the phone?](https://github.com/suyashpatel98/WearAI/issues/52) |
 | `apk:hosted` | Builds the standalone APK, which always targets hosted. Also decided in that ticket |
 | `logs:hosted` | Reads Edge Function logs. Read-only |
+| `secrets:hosted` | Human only. Prompts for each hosted function secret with hidden input and runs `supabase secrets set`. See [Secrets](#secrets) |
 
 Not commands:
 - `lint` and `typecheck`: `check` covers both.
 - `db:migrate`: use `db:reset`.
-- Setting hosted secrets: decided in [Where do secrets live, and how do they flow in a public repo?](https://github.com/suyashpatel98/WearAI/issues/50).
 - What CI runs: decided in [What runs in CI on a PR, and what protects main?](https://github.com/suyashpatel98/WearAI/issues/51). CI calls these same tasks rather than its own steps.
 
 ### Which environment a command targets
@@ -167,7 +167,7 @@ brew install mise && mise trust && mise run setup
 2. `brew install colima docker android-commandlinetools android-platform-tools`.
 3. `mise install`, then `pnpm install`.
 4. Accepts the Android SDK licences and installs the fixed `sdkmanager` package list.
-5. Copies `.env.local.example` to `.env.local` if `.env.local` is missing. It never overwrites one.
+5. Copies `supabase/functions/.env.example` to `supabase/functions/.env` if that file is missing. It never overwrites one. You then fill in the two free keys.
 6. `up`, then `db:reset`.
 
 It **doesn't**:
@@ -184,6 +184,7 @@ If a step fails, `setup` stops with the step's name and the command to run by ha
 - Run commands with `mise run <task>`. `mise tasks` lists them all.
 - The four to know: `setup`, `check`, `test`, `db:reset`.
 - **Never run a `:hosted` task except `logs:hosted`.**
+- **Never print, commit or paste the contents of `supabase/functions/.env`.**
 - How to test: run `check` while iterating, `test` before opening a PR, and `test:db` after any change to a migration or policy.
 
 ## Tests
@@ -229,3 +230,76 @@ Before trusting a new standalone APK:
 5. The existing Feed and its Posts load.
 
 **Don't press Generate Feed (3 images) or Style Me (1 image) as a routine check.** Each spends part of the 30-image budget. Try those flows on `local`, where the image provider is `fake`. Press them on `hosted` only when the build changed the image path.
+
+## Secrets
+
+Decided in [Where do secrets live, and how do they flow in a public repo?](https://github.com/suyashpatel98/WearAI/issues/50).
+
+The repo is public, so anything committed is public. Each value is either **public by design**, in which case it's committed and may ship in the APK, or **server-only**, in which case it never enters the repo or the app.
+
+### Inventory
+
+| Value | Kind | Lives in |
+|---|---|---|
+| Supabase URL and publishable key, `local` | Public | `.env.local` (committed) |
+| Supabase URL and publishable key, `hosted` | Public | `.env.hosted` (committed) |
+| Google OAuth client IDs (Web, Android) | Public | `supabase/config.toml` and the app config (committed) |
+| Hosted project ref | Public | Committed wherever commands need it |
+| Gemini Flash key (`wearai-free`) | Server-only | `supabase/functions/.env` locally, and hosted function secrets |
+| Roboflow key | Server-only | `supabase/functions/.env` locally, and hosted function secrets |
+| Nano Banana key (`wearai-images`) | Server-only | **Hosted function secrets only** |
+| Supabase secret key | Server-only | Injected into Edge Functions by Supabase. We never store it |
+| Supabase access token (scoped) | Server-only | GitHub environment `hosted` |
+| Android release keystore and password | Server-only | `~/.config/wearai/release.jks` on the laptop, plus the GitHub environment `hosted` if CI signs the APK |
+
+Not needed:
+- **Google OAuth client secret.** Native Google Sign-In passes an ID token to Supabase, and that flow has no secret. If Supabase turns out to demand one, it goes in the GitHub environment `hosted`.
+- **DB password.** It's needed only if the scoped access token turns out not to be enough for `db push`. That's checked in [How do changes reach hosted Supabase and the phone?](https://github.com/suyashpatel98/WearAI/issues/52).
+
+### App env files: committed
+
+`.env.local` and `.env.hosted` are committed and hold **only `EXPO_PUBLIC_*` values**. They need no template and no copy step, and a CI build can read `.env.hosted` directly. A secret never goes in them.
+
+### Local function secrets: `supabase/functions/.env`
+
+The file is gitignored. A committed `supabase/functions/.env.example` lists its variables, and `setup` copies it once:
+
+```sh
+GEMINI_API_KEY=        # wearai-free, no billing
+ROBOFLOW_API_KEY=
+IMAGE_PROVIDER=fake
+```
+
+The local stack loads this file automatically. The Nano Banana key never goes in it.
+
+### Hosted function secrets: `secrets:hosted`
+
+The human-only `secrets:hosted` task prompts, with hidden input, for `GEMINI_API_KEY`, `ROBOFLOW_API_KEY` and `NANO_BANANA_API_KEY`. It sets `IMAGE_PROVIDER=nano-banana`, then runs `supabase secrets set`.
+
+**No copy is kept**: not in a file, not in GitHub, not in a password manager. If a key is lost, mint a new one and run the task again. So the paid key never sits on disk where an agent could read it, and CI never holds it. Deploys don't touch function secrets.
+
+### GitHub: one environment, `hosted`
+
+All CI secrets live in a GitHub **environment** named `hosted`, whose deployment-branch rule allows only `main`. PR and branch runs can't read them, and fork runs never get secrets at all. It holds:
+
+- `SUPABASE_ACCESS_TOKEN`: a scoped token with only the permissions the deploy needs.
+- `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD` (one password for both the store and the key). These exist only if CI builds the APK.
+
+Set them from the terminal with `gh secret set --env hosted <NAME>`.
+
+### Android release keystore
+
+The keystore lives outside the repo at `~/.config/wearai/release.jks`. `.gitignore` also blocks `*.jks` and `*.keystore`. There's no other backup. Losing the keystore costs one uninstall and reinstall on the phone, plus registering the new SHA-1 with the Android OAuth client. The data lives in Supabase, so none of it is lost.
+
+### Hosted sign-ups are closed
+
+Because the hosted URL and publishable key are public, **hosted refuses new sign-ups** (`enable_signup = false`) once the developer's Google account exists. Otherwise anyone could sign in and spend the image budget. It applies to hosted only, so local can still create Users. The exact mechanism, a hosted-only config override or the Management API, is checked when it's built.
+
+### If a secret leaks
+
+GitHub push protection already blocks pushes that contain Google API keys or Supabase secret keys. Roboflow keys may not be covered. After a leak:
+
+1. Revoke the key at its provider.
+2. Mint a new one.
+3. Set it again with `secrets:hosted` or `gh secret set --env hosted …`. If it's used locally, update `supabase/functions/.env` too.
+4. For a Nano Banana key, also check `wearai-images`' spend in AI Studio.
