@@ -134,7 +134,7 @@ The developer, agents and CI share one set of commands: **mise tasks**, run as `
 | `check` | Fast and needs no Docker: typechecks the app (`tsc --noEmit`), runs `deno check`, `expo lint`, `deno lint` and `prettier --check` |
 | `fix` | Runs `prettier --write` and `expo lint --fix` |
 | `test` | Runs everything: `check`, `test:db`, `test:functions`, `expo export --platform android` and `expo install --check` |
-| `test:db` | pgTAP through `supabase test db` against local |
+| `test:db` | pgTAP through `supabase test db` against local. Starts the database first (`supabase db start`) if it isn't running |
 | `test:functions` | `deno test --allow-net=127.0.0.1` on the Edge Function handlers. There are none yet, so it passes trivially |
 | `db:new <name>` | `supabase migration new <name>` |
 | `db:reset` | Rebuilds local from the migrations and the seed, then runs `db:types`. It's the only way to apply migrations locally |
@@ -147,7 +147,7 @@ The developer, agents and CI share one set of commands: **mise tasks**, run as `
 Not commands:
 - `lint` and `typecheck`: `check` covers both.
 - `db:migrate`: use `db:reset`.
-- What CI runs: decided in [What runs in CI on a PR, and what protects main?](https://github.com/suyashpatel98/WearAI/issues/51). CI calls these same tasks rather than its own steps.
+- CI steps: CI runs `mise run test` and nothing else. See [CI and `main`](#ci-and-main).
 
 ### Which environment a command targets
 
@@ -185,6 +185,7 @@ If a step fails, `setup` stops with the step's name and the command to run by ha
 - The four to know: `setup`, `check`, `test`, `db:reset`.
 - **Never run a `:hosted` task except `logs:hosted`.**
 - **Never print, commit or paste the contents of `supabase/functions/.env`.**
+- **Open PRs, but never merge them.** The developer merges.
 - How to test: run `check` while iterating, `test` before opening a PR, and `test:db` after any change to a migration or policy.
 
 ## Tests
@@ -303,3 +304,49 @@ GitHub push protection already blocks pushes that contain Google API keys or Sup
 2. Mint a new one.
 3. Set it again with `secrets:hosted` or `gh secret set --env hosted …`. If it's used locally, update `supabase/functions/.env` too.
 4. For a Nano Banana key, also check `wearai-images`' spend in AI Studio.
+
+## CI and `main`
+
+Decided in [What runs in CI on a PR, and what protects main?](https://github.com/suyashpatel98/WearAI/issues/51).
+
+### The `ci` workflow
+
+One workflow with one job, `ci`. It runs on every pull request and every push to `main`, docs-only changes included:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: jdx/mise-action@v2        # installs and caches the tools pinned in mise.toml
+- uses: actions/cache@v4          # pnpm store, keyed on pnpm-lock.yaml
+- run: pnpm install --frozen-lockfile
+- run: mise run test
+```
+
+- **`mise run test` is the only check step.** It covers `check`, `expo export`, `expo install --check` and the pgTAP budget test. `test:db` starts the database itself, so the step is identical on the laptop.
+- `ubuntu-latest` (free and unlimited on a public repo), `timeout-minutes: 15`, and `concurrency` set so that a new push cancels the PR's previous run. Expect 3–5 minutes, mostly Supabase pulling its images.
+- **Docs-only PRs aren't skipped.** A `paths-ignore` filter would leave the required check "pending" forever, so the PR could never merge.
+- **Not cached:** Docker images, because restoring them is no faster than pulling, and Gradle, because PR CI never runs it.
+- **Not run on PRs:** Android builds and end-to-end tests. APK builds are decided in [How do changes reach hosted Supabase and the phone?](https://github.com/suyashpatel98/WearAI/issues/52).
+- The job uses no secrets and never references the `hosted` environment.
+
+### Reproducing a failure
+
+Run `mise run test` locally. CI does nothing else, and the tests need neither `supabase/functions/.env` nor any key. A failure that only happens in CI is a bug in the task, fixed in the task, never worked around in the YAML.
+
+### Protecting `main`
+
+A repository **ruleset** on `main`, created with `gh api`, so no dashboard is needed:
+
+- Changes arrive only by pull request, with **0 required approvals**, because GitHub won't let the developer approve their own PR.
+- The **`ci` check must pass** before merging.
+- Force pushes and branch deletion are blocked.
+- **No bypass**, not even for the admin. Every change, including a typo fix, waits for `ci`.
+
+Repository settings:
+- **Squash merge only**, titled after the PR, so `main` gets one commit per PR.
+- Branches are deleted automatically on merge.
+
+Agents' PRs face the same ruleset. **Agents open PRs but never merge them**, and `AGENTS.md` says so.
+
+### No git hooks
+
+There are no pre-commit or pre-push hooks. The required `ci` check already guards `main`, hooks would slow every commit, and agents often skip them with `--no-verify`. `AGENTS.md` tells agents to run `check` while iterating and `test` before opening a PR.
