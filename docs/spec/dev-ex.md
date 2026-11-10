@@ -412,3 +412,99 @@ No `expo-updates` and no EAS Update. JS changes reach the development build thro
 - `versionCode` = `git rev-list --count HEAD`, so it always goes up.
 - `versionName` = `0.1.<count>`. The short commit SHA appears on the app's profile screen.
 - **Rollback means reverting the PR on `main`.** The `deploy` workflow redeploys the functions. A migration is never reversed in place: a new migration undoes it. Then run `apk:hosted` from the revert commit. Never install an older build, because Android refuses a lower `versionCode`.
+
+## Dependency updates
+
+Decided in [How are dependencies kept current, and do updates auto-merge?](https://github.com/suyashpatel98/WearAI/issues/58).
+
+### Dependabot, configured by one file
+
+**Dependabot** opens the update PRs. It's built into GitHub, and the committed `.github/dependabot.yml` turns it on, so no dashboard or third-party app is needed. Renovate also covers `mise.toml`, but its hosted app has to be installed by clicking through a browser and gets write access to the repo. Running Renovate ourselves would need a personal access token, because PRs opened with the workflow token don't start CI.
+
+| What | Covered by |
+|---|---|
+| npm packages in `package.json`, including the Supabase CLI devDependency (`pnpm-lock.yaml` is updated too) | Dependabot `npm` |
+| Each Edge Function's `deno.json` (`/supabase/functions/*`) | Dependabot `deno` |
+| Actions in `.github/workflows/` | Dependabot `github-actions` |
+| Packages that the Expo SDK pins | By hand, in an SDK upgrade (below) |
+| `mise.toml` (Node, pnpm, Deno, JDK) and `packageManager` in `package.json` | By hand |
+
+### Schedule and grouping
+
+- Runs **monthly**.
+- Each ecosystem gets **one grouped PR for its minor and patch updates**, so there are at most three a month.
+- **Major updates arrive as separate PRs**, so one breaking major can't turn the whole group red.
+
+### Expo SDK packages are ignored
+
+Dependabot ignores `expo`, `expo-*`, `@expo/*`, `react`, `react-dom`, `react-native`, `react-native-*` and `@react-native/*`. The Expo SDK fixes their versions, and a lone bump of one would fail `expo install --check` in CI. The ignore list applies to security updates too.
+
+**An Expo SDK upgrade** is a deliberate PR, made by the developer or an agent:
+
+1. `pnpm expo install expo@^<N>`
+2. `pnpm expo install --fix`
+3. If the new SDK needs a newer Node, bump it in `mise.toml`, and bump pnpm (in `mise.toml` and `packageManager`) at the same time.
+4. `mise run test`, then the phone checklist in [Tests](#tests) on a fresh `apk:hosted`.
+
+Do one when a new SDK ships or a vulnerable Expo package needs it. There's no mise task for it.
+
+### No auto-merge
+
+**Nothing merges itself.** The developer reads each Dependabot PR and merges it once `ci` passes, which is the same rule as for agents' PRs. There are three reasons:
+
+- The tests only prove that the app builds and bundles, not that it works.
+- Merging a `deno.json` bump deploys to hosted.
+- An auto-merge done with the workflow token doesn't start other workflows. The `deploy` workflow wouldn't run, and hosted would quietly fall behind `main`.
+
+Dependabot PRs run `ci` like any other PR. `ci` needs no secrets, so Dependabot's restricted token doesn't matter.
+
+### Security alerts and fixes
+
+**Dependabot alerts** and **Dependabot security updates** are both on. They're enabled with `gh api` (`PUT repos/{owner}/{repo}/vulnerability-alerts` and `PUT …/automated-security-fixes`), so no dashboard is needed. Security-fix PRs don't wait for the monthly run. Each ecosystem's security fixes are grouped into one PR, and the developer still merges it.
+
+### Sketch of `.github/dependabot.yml`
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: monthly }
+    ignore:
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native/*"
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+  - package-ecosystem: deno
+    directories: ["/supabase/functions/*"]
+    schedule: { interval: monthly }
+    groups:
+      deno:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      deno-security:
+        applies-to: security-updates
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]
+```
+
+To check when it's built:
+- whether Dependabot's `deno` ecosystem reads a `deno.json` that sits next to `_shared/` without its own lockfile;
+- whether Dependabot handles the pnpm version that `mise.toml` pins.
