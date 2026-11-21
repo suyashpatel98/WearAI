@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WearAI at a Glance</title>
+<style>
+:root {
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --ink: #1d1d1b;
+  --muted: #6a675f;
+  --line: #d6d2c7;
+  --phone: #6b4fa3;  --phone-tint: #f2eefa;
+  --host: #b4561f;   --host-tint: #fcf0e7;
+  --ai: #1f7a8c;     --ai-tint: #e6f3f5;
+  --dev: #4a55a2;    --dev-tint: #eef0fa;
+  --free: #2f7d5b;   --free-bg: #e3f2e9;
+  --paid: #8a6a00;   --paid-bg: #fbefc8;
+  --accent: #e2573b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151513; --surface: #1f1f1c; --ink: #ecebe6; --muted: #a4a297; --line: #3a3934;
+    --phone: #b9a2ec; --phone-tint: #231d33;
+    --host: #ee9a63;  --host-tint: #2e2018;
+    --ai: #6cc3d3;    --ai-tint: #16282c;
+    --dev: #9ba5ec;   --dev-tint: #1e2135;
+    --free: #6cc79c;  --free-bg: #1b2d24;
+    --paid: #e3c25a;  --paid-bg: #342c10;
+    --accent: #ff7a5c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151513; --surface: #1f1f1c; --ink: #ecebe6; --muted: #a4a297; --line: #3a3934;
+  --phone: #b9a2ec; --phone-tint: #231d33;
+  --host: #ee9a63;  --host-tint: #2e2018;
+  --ai: #6cc3d3;    --ai-tint: #16282c;
+  --dev: #9ba5ec;   --dev-tint: #1e2135;
+  --free: #6cc79c;  --free-bg: #1b2d24;
+  --paid: #e3c25a;  --paid-bg: #342c10;
+  --accent: #ff7a5c;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 32px 16px 56px; }
+h1 { font-size: 28px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -.01em; }
+.sub { margin: 0 0 18px; color: var(--muted); max-width: 820px; }
+code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .88em; }
+
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 12px 0; }
+.tab { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tab:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.caption { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; padding: 14px 18px 4px; min-height: 96px; }
+.badge { min-width: 52px; height: 44px; padding: 0 10px; border-radius: 22px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 15px; white-space: nowrap; }
+.caption h2 { margin: 0; font-size: 19px; line-height: 1.3; }
+.caption p { margin: 2px 0 0; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px 18px 12px; border-bottom: 1px solid var(--line); }
+.btn { font: inherit; font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; cursor: pointer; }
+.btn:hover, .tab:hover { border-color: var(--accent); }
+.progress { margin-left: auto; font-size: 13px; color: var(--muted); }
+
+svg { display: block; width: 100%; height: auto; }
+#svg { max-height: max(460px, calc(100vh - 250px)); margin: 0 auto; padding: 6px 0 10px; }
+svg text { font-family: inherit; fill: var(--ink); }
+.zlabel { font-size: 12.5px; font-weight: 700; letter-spacing: .08em; }
+.ntitle { font-size: 15.5px; font-weight: 650; }
+.nline { font-size: 12.8px; fill: var(--muted); }
+.zone rect { stroke-width: 1.5; }
+.z-phone rect { fill: var(--phone-tint); stroke: var(--phone); } .z-phone text { fill: var(--phone); }
+.z-host rect { fill: var(--host-tint); stroke: var(--host); }    .z-host text { fill: var(--host); }
+.z-ai rect { fill: var(--ai-tint); stroke: var(--ai); }          .z-ai text { fill: var(--ai); }
+.z-dev rect { fill: var(--dev-tint); stroke: var(--dev); }       .z-dev text { fill: var(--dev); }
+.node > rect { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; transition: stroke .25s, stroke-width .25s; }
+.node.on > rect { stroke: var(--accent); stroke-width: 3; }
+.node.pulse > rect { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { stroke-width: 6; } }
+.zone.on > rect { stroke: var(--accent); stroke-width: 3; }
+.tagbg.free { fill: var(--free-bg); } .tagtx.free { fill: var(--free); }
+.tagbg.paid { fill: var(--paid-bg); } .tagtx.paid { fill: var(--paid); }
+.tagtx { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; }
+.note rect { fill: var(--surface); stroke: var(--line); stroke-dasharray: 4 4; }
+.note .ntitle { font-size: 14px; }
+.trail { fill: none; stroke: var(--accent); stroke-width: 2.2; opacity: .3; }
+.active { fill: none; stroke: var(--accent); stroke-width: 3; stroke-dasharray: 9 7; animation: flow .7s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -16; } }
+#dot { fill: var(--accent); }
+#halo { fill: var(--accent); opacity: .22; }
+
+.foot { margin-top: 18px; font-size: 14px; color: var(--muted); }
+.foot a { color: var(--dev); }
+@media (max-width: 760px) { h1 { font-size: 23px; } .progress { margin-left: 0; width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .active, .node.pulse > rect { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>How WearAI works</h1>
+  <p class="sub">WearAI learns your clothes from photos and shows you wearing outfits made from them. This one picture covers the app, the backend, the AI models and how code ships. Pick a flow, or let it play through all five.</p>
+
+  <div class="stage">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Request flows"></div>
+    <div class="caption" aria-live="polite">
+      <div class="badge" id="badge">1</div>
+      <div><h2 id="cap-title"></h2><p id="cap-text"></p></div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="play" type="button">Pause</button>
+      <button class="btn" id="prev" type="button">Back</button>
+      <button class="btn" id="next" type="button">Next</button>
+      <span class="progress" id="progress"></span>
+    </div>
+    <svg id="svg" viewBox="0 0 1100 830" role="img" aria-labelledby="svgtitle">
+      <title id="svgtitle">The WearAI app on your phone talks to a hosted Supabase backend. Its Edge Functions call Gemini Flash, SAM 3 and Nano Banana. Code reaches the backend and the phone through GitHub.</title>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+        </marker>
+      </defs>
+      <g id="layer-zones"></g>
+      <g id="layer-trail"></g>
+      <g id="layer-nodes"></g>
+      <g id="layer-active"></g>
+      <circle id="halo" r="16" cx="-99" cy="-99"/>
+      <circle id="dot" r="7" cx="-99" cy="-99"/>
+    </svg>
+  </div>
+
+  <p class="foot">This shows the MVP as specified; none of it is built yet. Every developer-setup decision in detail: <a href="dev-ex-decisions.html">dev-ex decisions</a>. Product specs: <code>docs/spec/screens.md</code>, <code>data-model.md</code>, <code>stylists.md</code>.</p>
+</div>
+
+<script>
+(function () {
+  var NS = "http://www.w3.org/2000/svg";
+
+  // ---------- the picture ----------
+  var ZONES = [
+    { id: "z-phone", cls: "z-phone", x: 20,  y: 40,  w: 270, h: 590, label: "YOUR PHONE · THE APP" },
+    { id: "z-host",  cls: "z-host",  x: 350, y: 40,  w: 320, h: 590, label: "HOSTED BACKEND · SUPABASE FREE" },
+    { id: "z-ai",    cls: "z-ai",    x: 730, y: 40,  w: 350, h: 410, label: "AI MODELS" },
+    { id: "z-dev",   cls: "z-dev",   x: 20,  y: 665, w: 1060, h: 150, label: "HOW CODE GETS HERE" }
+  ];
+  var NODES = [
+    // phone
+    { id: "n-onboard", x: 38, y: 85, w: 234, h: 96, title: "Sign-up and onboarding",
+      lines: ["Google sign-in", "Style Profile, 1–3 Reference Photos", "pick 1–3 of 10 Stylists"] },
+    { id: "n-wardrobe", x: 38, y: 196, w: 234, h: 96, title: "Wardrobe tab",
+      lines: ["add up to 20 photos at once", "review what was found", "your Items, grouped by slot"] },
+    { id: "n-feed", x: 38, y: 307, w: 234, h: 96, title: "Feed tab",
+      lines: ["Generate Feed: 3 Posts, 3× a day", "save or dismiss each Post", "buy something similar"] },
+    { id: "n-styleme", x: 38, y: 418, w: 234, h: 78, title: "Style Me tab",
+      lines: ["chat with the AI stylist", "replies come with an image"] },
+    { id: "n-browser", x: 38, y: 511, w: 234, h: 100, title: "Phone browser",
+      lines: ["store searches on Myntra,", "Ajio, Amazon.in, Flipkart", "built from the piece's name"] },
+    // hosted
+    { id: "n-auth", x: 368, y: 85, w: 284, h: 62, title: "Sign-in",
+      lines: ["Google only; closed to others after you"] },
+    { id: "n-fn", x: 368, y: 162, w: 284, h: 166, title: "Edge Functions",
+      lines: ["the only code that calls AI", "• upload: find clothes in photos", "• feed: make 3 Posts", "• style-me: answer a chat", "holds the AI keys, set only by you"] },
+    { id: "n-db", x: 368, y: 358, w: 284, h: 146, title: "Database",
+      lines: ["Style Profile, active Stylists", "Wardrobe Items, Uploads", "Outfits, Posts, saves, dismissals", "Style Me thread · image budget (30)", "each User sees only their own rows"] },
+    { id: "n-storage", x: 368, y: 519, w: 284, h: 92, title: "Storage (files)",
+      lines: ["your photos, Reference Photos", "Item cut-outs, generated images"] },
+    // ai
+    { id: "n-flash", x: 750, y: 85, w: 310, h: 102, title: "Gemini Flash", tag: ["FREE", "free"],
+      lines: ["finds, labels and merges Items", "picks 3 Outfits for each Feed", "writes Style Me replies"] },
+    { id: "n-sam", x: 750, y: 205, w: 310, h: 66, title: "SAM 3 on Roboflow", tag: ["FREE", "free"],
+      lines: ["cuts each Item out of its photo"] },
+    { id: "n-nano", x: 750, y: 289, w: 310, h: 140, title: "Nano Banana", tag: ["PAID · 30 MAX", "paid"],
+      lines: ["draws you wearing an Outfit", "from your Reference Photos and", "the Item cut-outs", "about $0.045 an image, the only cost"] },
+    // dev
+    { id: "n-laptop", x: 38, y: 700, w: 254, h: 96, title: "Your laptop",
+      lines: ["you + AI agents write the code", "a local copy of the backend", "fake images, never paid"] },
+    { id: "n-github", x: 368, y: 700, w: 284, h: 96, title: "GitHub",
+      lines: ["a proposal (pull request)", "an automatic check that it builds", "you approve; agents never can"] }
+  ];
+  var NOTES = [
+    { x: 730, y: 470, w: 350, h: 160, title: "Limits that keep it free",
+      lines: ["3 Posts per Feed, 3 Feeds a day", "30 generated images in total, then", "    “Image budget used up”", "up to 20 photos per Upload", "Flash, SAM 3, Supabase: free tiers"] },
+    { x: 750, y: 700, w: 310, h: 96, title: "One way to run things",
+      lines: ["every command is mise run …", "agents never touch the real backend", "only you set keys or install the app"] }
+  ];
+
+  // ---------- the flows ----------
+  var FLOWS = [
+    { name: "Sign up", steps: [
+      { from: "n-onboard", to: "n-auth", title: "You sign in with Google",
+        text: "It's the only way in. Once your account exists, the hosted backend stops accepting new sign-ups, so nobody else can spend your images." },
+      { from: "n-onboard", to: "n-db", title: "Your Style Profile and Stylists are saved",
+        text: "Gender, a budget band, optional height, and 1–3 of the 10 Stylists. The app writes these itself, and you can only ever see your own rows." },
+      { from: "n-onboard", to: "n-storage", title: "1–3 Reference Photos are uploaded",
+        text: "Full-body photos of you. They're what puts you in every generated image." },
+      { from: "n-onboard", to: "n-wardrobe", mode: "v", title: "Onboarding ends with a first Upload",
+        text: "The Feed needs clothes to work with, so the first batch of photos can't be skipped. See “Add clothes” next." }
+    ]},
+    { name: "Add clothes", steps: [
+      { pulse: "n-wardrobe", title: "You pick up to 20 photos",
+        text: "From the Android photo picker. The phone shrinks each one before sending it, to stay inside the free storage." },
+      { from: "n-wardrobe", to: "n-storage", title: "The photos go to Storage",
+        text: "They're kept with the Upload, which starts as “processing”." },
+      { from: "n-wardrobe", to: "n-fn", title: "The app asks the upload function to find your clothes",
+        text: "The screen says “Finding your clothes in N photos…”. It takes about a minute." },
+      { from: "n-fn", to: "n-flash", title: "One Gemini Flash call finds every Item",
+        text: "It names each piece and sets its category, colours, style and pattern. The same shirt seen in three photos becomes one Item. Free." },
+      { from: "n-fn", to: "n-sam", title: "SAM 3 cuts each Item out",
+        text: "Using the boxes Flash drew, so each Item gets a clean cut-out. Free." },
+      { from: "n-fn", to: "n-storage", mode: "bR", title: "The cut-outs are saved",
+        text: "Each cut-out becomes the Item's picture and, later, what the image model copies." },
+      { from: "n-fn", to: "n-db", mode: "v", title: "The Items are saved, waiting for review",
+        text: "They don't join the Wardrobe yet." },
+      { from: "n-db", to: "n-wardrobe", title: "You check them, then add them",
+        text: "Fix a label, merge duplicates or delete mistakes, then press “Add N Items to Wardrobe”. Only then are they yours to style." }
+    ]},
+    { name: "Generate Feed", steps: [
+      { from: "n-feed", to: "n-fn", title: "You press Generate Feed",
+        text: "Up to 3 times a day. The button shows how many are left, and it's disabled while a Feed is being made." },
+      { from: "n-fn", to: "n-db", mode: "v", title: "The feed function gathers what it needs",
+        text: "Your Wardrobe (minus Items marked “Don't use”), Style Profile, active Stylists, and your last 30 dismissals and 20 saves." },
+      { from: "n-fn", to: "n-flash", title: "Gemini Flash picks 3 Outfits",
+        text: "Head to toe, split across your Stylists. Mostly your own Items, plus up to 2 Suggested Items you could buy. No repeats within 60 days. Free." },
+      { from: "n-fn", to: "n-db", mode: "v", title: "One image is reserved from the budget",
+        text: "The budget is a counter that stops at 30. Once it's used up, no image is made and the button says so." },
+      { from: "n-fn", to: "n-nano", title: "Nano Banana draws you in the Outfit",
+        text: "It gets your Reference Photos and the Item cut-outs. This repeats for each of the 3 Outfits, and it's the only step that costs money." },
+      { from: "n-fn", to: "n-storage", mode: "bR", title: "The images are saved",
+        text: "Each one is labelled “AI-generated”." },
+      { from: "n-fn", to: "n-db", mode: "v", title: "3 Posts are written",
+        text: "A Post is the image, a caption, its Stylist tag and any Suggested Items." },
+      { from: "n-fn", to: "n-feed", title: "The Posts appear in your Feed",
+        text: "Save the ones you like. Dismiss others, optionally saying why; that feeds into the next Feed." },
+      { from: "n-feed", to: "n-browser", mode: "bL", title: "Buy something similar",
+        text: "Tapping a Suggested Item opens a store search on Myntra, Ajio, Amazon.in or Flipkart. There's no paid product lookup." }
+    ]},
+    { name: "Style Me", steps: [
+      { from: "n-styleme", to: "n-fn", title: "You ask the stylist something",
+        text: "For example, “What should I wear to a friend's wedding?”. Text only." },
+      { from: "n-fn", to: "n-db", mode: "v", title: "It reads the conversation and your Wardrobe",
+        text: "Up to the last 20 messages since you last pressed “New”." },
+      { from: "n-fn", to: "n-flash", title: "Gemini Flash writes the reply",
+        text: "A reply can include one head-to-toe Outfit. Free." },
+      { from: "n-fn", to: "n-db", mode: "v", title: "One image is reserved from the budget",
+        text: "The same 30-image budget the Feed uses." },
+      { from: "n-fn", to: "n-nano", title: "Nano Banana draws the Outfit on you",
+        text: "Asking for changes makes a fresh image from scratch." },
+      { from: "n-fn", to: "n-styleme", title: "The reply appears with its image",
+        text: "If the budget is used up, you get the caption without an image. Style Me has no saving and no buy links." }
+    ]},
+    { name: "Ship a change", steps: [
+      { from: "n-laptop", to: "n-github", title: "You or an agent propose a change",
+        text: "It's tried first against the laptop's local copy of the backend, where images are fake and free." },
+      { pulse: "n-github", title: "GitHub checks it, then you approve",
+        text: "The check confirms the app still builds and the image budget still stops at its limit. Agents can never approve." },
+      { from: "n-github", to: "z-host", mode: "v", title: "The backend updates itself",
+        text: "Database changes and Edge Functions go live automatically. Nothing is done by hand." },
+      { from: "n-laptop", to: "z-phone", mode: "v", title: "You install the new app over USB",
+        text: "When you want a new version on your phone, one command builds it on the laptop and installs it." }
+    ]}
+  ];
+
+  // ---------- render the picture ----------
+  function el(name, attrs, parent) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  var zl = document.getElementById("layer-zones"), nl = document.getElementById("layer-nodes");
+  var tl = document.getElementById("layer-trail"), al = document.getElementById("layer-active");
+  var BOX = {};
+  ZONES.forEach(function (z) {
+    var g = el("g", { id: z.id, "class": "zone " + z.cls }, zl);
+    el("rect", { x: z.x, y: z.y, width: z.w, height: z.h, rx: 20 }, g);
+    el("text", { "class": "zlabel", x: z.x + 18, y: z.y + 26 }, g).textContent = z.label;
+    BOX[z.id] = z;
+  });
+  function drawBox(n, cls) {
+    var g = el("g", { id: n.id || "", "class": cls }, nl);
+    el("rect", { x: n.x, y: n.y, width: n.w, height: n.h, rx: 12 }, g);
+    el("text", { "class": "ntitle", x: n.x + 16, y: n.y + 26 }, g).textContent = n.title;
+    if (n.tag) {
+      var tw = n.tag[0].length * 7 + 16;
+      el("rect", { "class": "tagbg " + n.tag[1], x: n.x + n.w - tw - 12, y: n.y + 12, width: tw, height: 20, rx: 10 }, g);
+      el("text", { "class": "tagtx " + n.tag[1], x: n.x + n.w - tw / 2 - 12, y: n.y + 26, "text-anchor": "middle" }, g).textContent = n.tag[0];
+    }
+    n.lines.forEach(function (line, k) {
+      el("text", { "class": "nline", x: n.x + 16, y: n.y + 48 + k * 19 }, g).textContent = line;
+    });
+    if (n.id) BOX[n.id] = n;
+  }
+  NODES.forEach(function (n) { drawBox(n, "node"); });
+  NOTES.forEach(function (n) { drawBox(n, "note"); });
+
+  // ---------- paths ----------
+  function geo(id) {
+    var b = BOX[id];
+    return { x: b.x, y: b.y, r: b.x + b.w, b: b.y + b.h, cx: b.x + b.w / 2, cy: b.y + b.h / 2 };
+  }
+  function pathFor(s) {
+    var a = geo(s.from), b = geo(s.to), m = s.mode || "h";
+    if (m === "v") {
+      var x = (a.cx >= b.x && a.cx <= b.r) ? a.cx : b.cx;
+      return b.y >= a.b ? "M" + x + "," + a.b + " L" + x + "," + b.y : "M" + x + "," + a.y + " L" + x + "," + b.b;
+    }
+    if (m === "bR") return "M" + a.r + "," + a.cy + " C" + (a.r + 46) + "," + a.cy + " " + (b.r + 46) + "," + b.cy + " " + b.r + "," + b.cy;
+    if (m === "bL") return "M" + a.x + "," + a.cy + " C" + (a.x - 30) + "," + a.cy + " " + (b.x - 30) + "," + b.cy + " " + b.x + "," + b.cy;
+    if (b.x >= a.r) {
+      var dx = (b.x - a.r) / 2;
+      return "M" + a.r + "," + a.cy + " C" + (a.r + dx) + "," + a.cy + " " + (b.x - dx) + "," + b.cy + " " + b.x + "," + b.cy;
+    }
+    var dx2 = (a.x - b.r) / 2;
+    return "M" + a.x + "," + a.cy + " C" + (a.x - dx2) + "," + a.cy + " " + (b.r + dx2) + "," + b.cy + " " + b.r + "," + b.cy;
+  }
+
+  // ---------- player ----------
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var dot = document.getElementById("dot"), halo = document.getElementById("halo");
+  var tabs = document.getElementById("tabs"), playBtn = document.getElementById("play");
+  var f = 0, s = 0, playing = !reduce, raf = null, timer = null;
+
+  FLOWS.forEach(function (flow, k) {
+    var b = document.createElement("button");
+    b.className = "tab"; b.type = "button"; b.setAttribute("role", "tab");
+    b.textContent = (k + 1) + " · " + flow.name;
+    b.onclick = function () { stop(); go(k, 0); };
+    tabs.appendChild(b);
+  });
+
+  function stop() { cancelAnimationFrame(raf); clearTimeout(timer); }
+  function setDot(x, y) {
+    dot.setAttribute("cx", x); dot.setAttribute("cy", y);
+    halo.setAttribute("cx", x); halo.setAttribute("cy", y);
+  }
+  function clearMarks() {
+    document.querySelectorAll(".node, .zone").forEach(function (n) { n.classList.remove("on", "pulse"); });
+  }
+
+  function go(fi, si) {
+    f = fi; s = si;
+    var flow = FLOWS[f], step = flow.steps[s];
+    Array.prototype.forEach.call(tabs.children, function (t, k) {
+      t.classList.toggle("on", k === f); t.setAttribute("aria-selected", k === f);
+    });
+    document.getElementById("badge").textContent = (f + 1) + "." + (s + 1);
+    document.getElementById("cap-title").textContent = step.title;
+    document.getElementById("cap-text").textContent = step.text;
+    document.getElementById("progress").textContent = flow.name + ": step " + (s + 1) + " of " + flow.steps.length;
+
+    // trail of earlier steps in this flow
+    while (tl.firstChild) tl.removeChild(tl.firstChild);
+    flow.steps.slice(0, s).forEach(function (p) { if (!p.pulse) el("path", { "class": "trail", d: pathFor(p) }, tl); });
+    while (al.firstChild) al.removeChild(al.firstChild);
+    clearMarks();
+
+    if (step.pulse) {
+      document.getElementById(step.pulse).classList.add("on", "pulse");
+      setDot(-99, -99);
+      hold(step);
+      return;
+    }
+    document.getElementById(step.from).classList.add("on");
+    document.getElementById(step.to).classList.add("on");
+    var path = el("path", { "class": "active", d: pathFor(step), "marker-end": "url(#arrow)" }, al);
+    var len = path.getTotalLength();
+    if (reduce) { var e = path.getPointAtLength(len); setDot(e.x, e.y); hold(step); return; }
+    var start = null, dur = 1200;
+    raf = requestAnimationFrame(function frame(t) {
+      if (start === null) start = t;
+      var p = Math.min(1, (t - start) / dur);
+      var eased = p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      var pt = path.getPointAtLength(eased * len);
+      setDot(pt.x, pt.y);
+      if (p < 1) raf = requestAnimationFrame(frame); else hold(step);
+    });
+  }
+  function hold(step) {
+    if (!playing) return;
+    var ms = Math.min(5200, Math.max(2600, 1400 + step.text.length * 24));
+    timer = setTimeout(advance, ms);
+  }
+  function advance() {
+    var flow = FLOWS[f];
+    if (s + 1 < flow.steps.length) go(f, s + 1);
+    else go((f + 1) % FLOWS.length, 0);
+  }
+  function back() {
+    if (s > 0) go(f, s - 1);
+    else { var pf = (f - 1 + FLOWS.length) % FLOWS.length; go(pf, FLOWS[pf].steps.length - 1); }
+  }
+
+  playBtn.onclick = function () {
+    playing = !playing;
+    playBtn.textContent = playing ? "Pause" : "Play";
+    stop();
+    if (playing) advance();
+  };
+  document.getElementById("next").onclick = function () { stop(); advance(); };
+  document.getElementById("prev").onclick = function () { stop(); back(); };
+  playBtn.textContent = playing ? "Pause" : "Play";
+  go(0, 0);
+})();
+</script>
+</body>
+</html>
