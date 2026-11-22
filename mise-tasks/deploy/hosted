@@ -15,7 +15,20 @@ confirm_hosted \
   "supabase functions deploy: ${#functions[@]} function(s)${functions[*]+: ${functions[*]}}"
 
 api() { curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "$@"; }
-project_status() { api "https://api.supabase.com/v1/projects/$ref" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).status))'; }
+project_status() {
+  local code body
+  body="$(mktemp)"
+  code="$(curl -sS -o "$body" -w '%{http_code}' -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+    "https://api.supabase.com/v1/projects/$ref")" || code="000"
+  case "$code" in
+    200) node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).status)' "$body" ;;
+    401) die "SUPABASE_ACCESS_TOKEN was rejected (401). It must be an access token from supabase.com/dashboard/account/tokens (it starts with sbp_), not the project's sb_secret_ or sb_publishable_ key." ;;
+    403) die "SUPABASE_ACCESS_TOKEN can't read project $ref (403). Give the token access to this project." ;;
+    404) die "Project $ref wasn't found (404). Check HOSTED_PROJECT_REF in mise.toml and that the token's account owns it." ;;
+    *) die "The Management API answered HTTP $code: $(head -c 300 "$body")" ;;
+  esac
+  rm -f "$body"
+}
 
 step "Project status"
 if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
