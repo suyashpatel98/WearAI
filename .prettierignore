@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+android/
+ios/
+.expo/
+dist/
+supabase/.temp/
+supabase/.branches/
+onboard/

@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#MISE description="Human only. Build the hosted APK (WearAI) from clean main, sign it and adb install it"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+banner_hosted
+
+step "Clean main?"
+git fetch -q origin main
+[ -z "$(git status --porcelain)" ] || die "The working tree isn't clean. The APK must match a commit on main."
+git merge-base --is-ancestor HEAD origin/main || die "HEAD isn't on origin/main. Check out main and pull first."
+printf 'Building %s (%s commits).\n' "$(git rev-parse --short HEAD)" "$(git rev-list --count HEAD)"
+
+keystore="$HOME/.config/wearai/release.jks"
+props="$HOME/.config/wearai/keystore.properties"
+[ -f "$keystore" ] && [ -f "$props" ] || die "Missing $keystore or $props. See docs/spec/dev-ex.md#android-release-keystore."
+prop() { sed -n "s/^$1=//p" "$props" | head -1; }
+password="$(prop storePassword)"
+alias_name="$(prop keyAlias)"
+[ -n "$password" ] && [ -n "$alias_name" ] || die "$props needs storePassword= and keyAlias= lines."
+
+require_phone
+
+step "Prebuild (release variant, hosted)"
+load_app_env hosted
+export APP_VARIANT=release
+prebuild_android release
+
+step "Gradle assembleRelease (arm64-v8a)"
+(cd android && ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a \
+  -Pandroid.injected.signing.store.file="$keystore" \
+  -Pandroid.injected.signing.store.password="$password" \
+  -Pandroid.injected.signing.key.alias="$alias_name" \
+  -Pandroid.injected.signing.key.password="$password")
+apk=android/app/build/outputs/apk/release/app-release.apk
+
+step "Check the bundle points at hosted"
+bundle="$(mktemp)"
+trap 'rm -f "$bundle"' EXIT
+unzip -p "$apk" assets/index.android.bundle >"$bundle"
+grep -aq "$EXPO_PUBLIC_SUPABASE_URL" "$bundle" || die "The bundle doesn't contain the hosted URL. Not installing."
+if grep -aq "127.0.0.1:54321" "$bundle"; then die "The bundle contains the local URL. Not installing."; fi
+printf 'OK: hosted URL only.\n'
+
+step "adb install -r"
+adb install -r "$apk"
+printf '\n✓ WearAI installed. Run the phone checklist in docs/spec/dev-ex.md#phone-checklist-for-a-hosted-apk.\n'

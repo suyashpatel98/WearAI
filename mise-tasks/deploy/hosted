@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+#MISE description="Deploy to hosted: restore if paused, db push, functions deploy. CI runs it on merge; humans only as an escape hatch"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+ref="${HOSTED_PROJECT_REF:?}"
+
+functions=()
+for dir in supabase/functions/*/; do
+  name="$(basename "$dir")"
+  [ "$name" != "_shared" ] && [ -f "$dir/index.ts" ] && functions+=("$name")
+done
+
+confirm_hosted \
+  "restore the project if it is paused" \
+  "supabase db push: apply migrations not yet on hosted (never the seed)" \
+  "supabase functions deploy: ${#functions[@]} function(s)${functions[*]+: ${functions[*]}}"
+
+api() { curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" "$@"; }
+project_status() { api "https://api.supabase.com/v1/projects/$ref" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).status))'; }
+
+step "Project status"
+if [ -n "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+  status="$(project_status)"
+  printf '%s\n' "$status"
+  if [ "$status" = "INACTIVE" ]; then
+    printf 'Paused. Restoring…\n'
+    api -X POST "https://api.supabase.com/v1/projects/$ref/restore" >/dev/null
+    for _ in $(seq 1 60); do
+      sleep 15
+      status="$(project_status)"
+      printf '  %s\n' "$status"
+      [ "$status" = "ACTIVE_HEALTHY" ] && break
+    done
+    [ "$status" = "ACTIVE_HEALTHY" ] || die "hosted didn't come back within 15 minutes (last status: $status)"
+  fi
+else
+  printf '! SUPABASE_ACCESS_TOKEN is not set, so the paused check is skipped. If hosted is paused, restore it in the dashboard.\n'
+fi
+
+step "supabase db push"
+pnpm supabase db push --remote="$ref" --yes
+
+step "supabase functions deploy"
+if [ "${#functions[@]}" -eq 0 ]; then
+  printf 'No functions to deploy.\n'
+else
+  pnpm supabase functions deploy --remote="$ref" --use-api --yes
+fi
+printf '\n✓ hosted matches this commit.\n'

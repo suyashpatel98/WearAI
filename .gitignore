@@ -1,2 +1,35 @@
 # Local Claude agent worktrees
 /.claude/worktrees/
+
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+
+# Generated native folders (expo prebuild)
+/android
+/ios
+.kotlin/
+
+# Secrets. .env.local and .env.hosted are public by design and committed.
+supabase/functions/.env
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.pem
+
+# Supabase CLI
+supabase/.branches/
+supabase/.temp/
+
+# Misc
+.DS_Store
+*.tsbuildinfo
+npm-debug.*

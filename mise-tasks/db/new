@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Create a migration: mise run db:new <name>"
+#USAGE arg "<name>" help="Migration name, e.g. add_items"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+pnpm supabase migration new "${usage_name:?}"

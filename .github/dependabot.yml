@@ -1,0 +1,41 @@
+# Monthly update PRs, one minor/patch group per ecosystem, majors separate
+# (docs/spec/dev-ex.md#dependency-updates). Nothing auto-merges: the developer merges on green ci.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: monthly }
+    # The Expo SDK fixes these versions. Upgrade them by hand in an SDK upgrade PR.
+    ignore:
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "@expo/*"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native/*"
+      - dependency-name: "@types/react"
+      - dependency-name: "typescript"
+      - dependency-name: "eslint-config-expo"
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: [minor, patch]
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  # Add the deno ecosystem when the first Edge Function (and its deno.json) exists:
+  # - package-ecosystem: deno
+  #   directories: ["/supabase/functions/*"]
+  #   schedule: { interval: monthly }
+  #   groups:
+  #     deno: { patterns: ["*"], update-types: [minor, patch] }
+  #     deno-security: { applies-to: security-updates, patterns: ["*"] }

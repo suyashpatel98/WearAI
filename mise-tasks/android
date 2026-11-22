@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Build the development build (WearAI Dev) and install it on the connected phone"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+require_phone
+prebuild_android development
+APP_VARIANT=development pnpm expo run:android --no-bundler --no-install
+printf '\nNext: mise run dev (local) or mise run dev:hosted\n'

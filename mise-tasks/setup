@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+#MISE description="Bootstrap or repair this Mac (re-runnable; never uninstalls; never touches hosted)"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+
+current=""
+trap 'printf "\n✗ setup stopped at: %s\n  Fix it, then run: mise run setup\n" "$current" >&2' ERR
+
+SDK_PACKAGES=(
+  "platform-tools"
+  "platforms;android-37.0"
+  "build-tools;37.0.0"
+  "ndk;27.1.12297006"
+  "cmake;3.22.1"
+)
+
+current="1. Homebrew"; step "$current"
+command -v brew >/dev/null || die "Homebrew is missing. Install it from https://brew.sh, then run: mise run setup"
+
+current="2. brew install colima docker android-commandlinetools android-platform-tools"; step "$current"
+brew install colima docker
+brew install --cask android-commandlinetools android-platform-tools
+
+# Report, never remove (docs/spec/dev-ex.md#setup).
+if [ -d /Applications/Docker.app ]; then
+  printf '! Docker Desktop is installed. Remove it to keep one Docker context: Docker Desktop → Troubleshoot → Uninstall\n'
+fi
+for p in $(which -a supabase 2>/dev/null); do
+  case "$p" in "$MISE_PROJECT_ROOT"/*) ;; *) printf '! A global supabase CLI is at %s. Remove it: npm rm -g supabase (or brew uninstall supabase)\n' "$p" ;; esac
+done
+
+current="3. mise install && pnpm install"; step "$current"
+mise install
+pnpm install
+
+current="4. Android SDK licences and packages"; step "$current"
+mkdir -p "$ANDROID_HOME"
+(yes || true) | sdkmanager --sdk_root="$ANDROID_HOME" --licenses >/dev/null
+sdkmanager --sdk_root="$ANDROID_HOME" "${SDK_PACKAGES[@]}"
+
+current="5. supabase/functions/.env"; step "$current"
+if [ -f supabase/functions/.env ]; then
+  printf 'Exists, left alone.\n'
+else
+  cp supabase/functions/.env.example supabase/functions/.env
+  printf 'Created from .env.example. Fill in GEMINI_API_KEY and ROBOFLOW_API_KEY (both free).\n'
+fi
+
+current="6. up && db:reset"; step "$current"
+mise run up
+mise run db:reset
+
+trap - ERR
+printf '\n✓ setup finished.\n'

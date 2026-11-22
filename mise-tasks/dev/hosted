@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+#MISE description="Start Metro for the development build against hosted (reads hosted, changes nothing)"
+APP_ENV=hosted exec "$MISE_PROJECT_ROOT/mise-tasks/dev/_default"

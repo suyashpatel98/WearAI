@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#MISE description="Everything CI runs: check, test:db, test:functions, expo export, expo install --check"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+step "check";          mise run check
+step "test:db";        mise run test:db
+step "test:functions"; mise run test:functions
+step "expo export --platform android"
+out="$(mktemp -d)"
+trap 'rm -rf "$out"' EXIT
+pnpm expo export --platform android --output-dir "$out" >/dev/null
+printf 'Bundled.\n'
+step "expo install --check"; pnpm expo install --check
+printf '\n✓ test passed.\n'
