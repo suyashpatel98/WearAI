@@ -23,6 +23,7 @@ step "Prebuild (release variant, hosted)"
 load_app_env hosted
 export APP_VARIANT=release
 prebuild_android release
+use_metro_cache_for hosted
 
 step "Gradle assembleRelease (arm64-v8a)"
 (cd android && ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a \

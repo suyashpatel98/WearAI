@@ -16,7 +16,7 @@ expo-env.d.ts
 /ios
 .kotlin/
 
-# Secrets. .env.local and .env.hosted are public by design and committed.
+# Secrets. env/local.env and env/hosted.env are public by design and committed.
 supabase/functions/.env
 *.jks
 *.keystore

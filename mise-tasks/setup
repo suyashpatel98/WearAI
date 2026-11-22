@@ -8,6 +8,7 @@ trap 'printf "\n✗ setup stopped at: %s\n  Fix it, then run: mise run setup\n" 
 SDK_PACKAGES=(
   "platform-tools"
   "platforms;android-37.0"
+  "build-tools;36.0.0"
   "build-tools;37.0.0"
   "ndk;27.1.12297006"
   "cmake;3.22.1"

@@ -1,4 +1,4 @@
-// Public values only, inlined at bundle time from .env.local or .env.hosted (docs/spec/dev-ex.md#secrets).
+// Public values only, exported by the mise task from env/local.env or env/hosted.env (docs/spec/dev-ex.md#secrets).
 // Expo inlines EXPO_PUBLIC_* only when read as process.env.NAME, so each one is spelled out.
 
 export type AppEnv = "local" | "hosted";

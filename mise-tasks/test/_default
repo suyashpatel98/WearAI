@@ -5,6 +5,7 @@ step "check";          mise run check
 step "test:db";        mise run test:db
 step "test:functions"; mise run test:functions
 step "expo export --platform android"
+load_app_env local
 out="$(mktemp -d)"
 trap 'rm -rf "$out"' EXIT
 pnpm expo export --platform android --output-dir "$out" >/dev/null

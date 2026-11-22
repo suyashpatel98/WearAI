@@ -17,11 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: .env.hosted
+          sparse-checkout: env/hosted.env
           sparse-checkout-cone-mode: false
       - name: Send one REST read to hosted
         run: |
-          set -a; . ./.env.hosted; set +a
+          set -a; . ./env/hosted.env; set +a
           # PostgREST runs this in Postgres, which is the activity that keeps the project awake.
           # image_budget has no client access, so 401/403 is expected and fine. Only a 5xx or no
           # answer (a paused or broken project) fails the run.

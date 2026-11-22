@@ -7,7 +7,7 @@ deno = "2.9.8"
 java = "zulu-17.70.201.0"
 
 [env]
-# The one hosted Supabase project (public; also in .env.hosted).
+# The one hosted Supabase project (public; also in env/hosted.env).
 HOSTED_PROJECT_REF = "cwhxqpnmqbuoqrylbwsx"
 ANDROID_HOME = "{{env.HOME}}/Library/Android/sdk"
 

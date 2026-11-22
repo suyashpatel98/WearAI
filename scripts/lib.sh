@@ -30,14 +30,15 @@ confirm_hosted() {
 docker_ready() { command -v docker >/dev/null && docker info >/dev/null 2>&1; }
 local_db_running() { docker_ready && [ -n "$(docker ps -q --filter "name=^${LOCAL_DB_CONTAINER}$")" ]; }
 
-# Export the app's public values for APP_ENV (local|hosted). Variables already in the environment
-# win over Expo's own .env.local loading, so this is what picks the environment.
+# Export the app's public values for APP_ENV (local|hosted) from env/<APP_ENV>.env. The files are
+# deliberately not named .env*: in development Expo SDK 58 bundles any root .env.local and lets it
+# override exported variables, which would pin every dev build to one environment.
 load_app_env() {
   local env="${1:-${APP_ENV:-local}}"
   case "$env" in local | hosted) ;; *) die "APP_ENV must be local or hosted, not '$env'" ;; esac
   set -a
   # shellcheck disable=SC1090
-  . "./.env.$env"
+  . "./env/$env.env"
   set +a
   export APP_ENV="$env"
 }
@@ -65,4 +66,19 @@ prebuild_android() {
   if [ -d android ] && [ "$(cat "$marker" 2>/dev/null)" != "$variant" ]; then clean=(--clean); fi
   APP_VARIANT="$variant" pnpm expo prebuild --platform android --no-install ${clean[@]+"${clean[@]}"}
   printf '%s\n' "$variant" >"$marker"
+}
+
+# Metro caches transformed files with EXPO_PUBLIC_* values already inlined, in one cache shared by
+# every run. Clear it whenever the environment differs from the last bundle, or a switch to hosted
+# would still ship local's URL (and the reverse).
+use_metro_cache_for() {
+  local env="$1" marker=".expo/wearai-metro-env"
+  if [ "$(cat "$marker" 2>/dev/null)" != "$env" ]; then
+    local cache
+    cache="$(node -p 'require("os").tmpdir()')/metro-cache"
+    rm -rf "$cache"
+    printf 'Cleared the Metro cache (bundling for %s now).\n' "$env"
+  fi
+  mkdir -p .expo
+  printf '%s\n' "$env" >"$marker"
 }
