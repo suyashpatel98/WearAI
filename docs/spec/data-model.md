@@ -32,51 +32,51 @@ create type message_kind  as enum ('user', 'assistant', 'divider');
 
 **`categories`**: the 68 categories from `item-attributes.md`. The slot is a lookup, never stored on an Item.
 
-| column | type | notes |
-|---|---|---|
-| `id` | `text` pk | e.g. `kurta`, `other_footwear` |
-| `slot` | `slot` | |
-| `label` | `text` | shown in the review picker |
+| column  | type      | notes                          |
+| ------- | --------- | ------------------------------ |
+| `id`    | `text` pk | e.g. `kurta`, `other_footwear` |
+| `slot`  | `slot`    |                                |
+| `label` | `text`    | shown in the review picker     |
 
 **`stylists`**: the ten Stylists from `stylists.md`. The sample images are bundled with the app, not stored in the database or in Storage (amended by [How does hosted get its reference data and first Wardrobe?](https://github.com/suyashpatel98/WearAI/issues/64)).
 
-| column | type | notes |
-|---|---|---|
-| `id` | `text` pk | slug, e.g. `indian_traditional` |
-| `name` | `text` | |
-| `tagline` | `text` | |
-| `brief` | `jsonb` | paragraph, signature pieces, palette, fabrics, avoid, menswear/womenswear notes |
-| `position` | `int` | display order |
+| column     | type      | notes                                                                           |
+| ---------- | --------- | ------------------------------------------------------------------------------- |
+| `id`       | `text` pk | slug, e.g. `indian_traditional`                                                 |
+| `name`     | `text`    |                                                                                 |
+| `tagline`  | `text`    |                                                                                 |
+| `brief`    | `jsonb`   | paragraph, signature pieces, palette, fabrics, avoid, menswear/womenswear notes |
+| `position` | `int`     | display order                                                                   |
 
 ## The User
 
 **`profiles`**: the User and their Style Profile, one row per User.
 
-| column | type | notes |
-|---|---|---|
-| `user_id` | `uuid` pk → `auth.users` | |
-| `gender` | `gender` | |
-| `clothes` | `clothes` | always set: from gender, or from the "Prefer not to say" follow-up. Generation reads only this. |
-| `budget_band` | `price_band` | |
-| `height_cm` | `int` null | |
-| `onboarded_at` | `timestamptz` null | |
+| column         | type                     | notes                                                                                           |
+| -------------- | ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `user_id`      | `uuid` pk → `auth.users` |                                                                                                 |
+| `gender`       | `gender`                 |                                                                                                 |
+| `clothes`      | `clothes`                | always set: from gender, or from the "Prefer not to say" follow-up. Generation reads only this. |
+| `budget_band`  | `price_band`             |                                                                                                 |
+| `height_cm`    | `int` null               |                                                                                                 |
+| `onboarded_at` | `timestamptz` null       |                                                                                                 |
 
 Name and email come from `auth.users` (Google). No 18+ column: legal work is out of scope.
 
 **`reference_photos`**
 
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` pk | |
-| `path` | `text` | Storage path |
+| column | type      | notes        |
+| ------ | --------- | ------------ |
+| `id`   | `uuid` pk |              |
+| `path` | `text`    | Storage path |
 
 The app enforces 1–3 per User. Replacing a photo deletes one row and inserts another.
 
 **`user_stylists`**: the User's active Stylists.
 
-| column | type | notes |
-|---|---|---|
-| `user_id`, `stylist_id → stylists` | pk | |
+| column                             | type | notes |
+| ---------------------------------- | ---- | ----- |
+| `user_id`, `stylist_id → stylists` | pk   |       |
 
 The app enforces 1–3. Each Feed's 3 Posts are split 3 / 2 + 1 / 1 + 1 + 1. With 2 active, the Stylist that gets 2 is picked by the User's count of `ok` Feed runs mod 2, so no rotation state is stored. Changes apply from the next Feed, because the Feed function reads this table on each press.
 
@@ -84,31 +84,31 @@ The app enforces 1–3. Each Feed's 3 Posts are split 3 / 2 + 1 / 1 + 1 + 1. Wit
 
 **`uploads`**
 
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` pk | |
-| `status` | `upload_status` | `processing` → `in_review` → `done`, or `failed` |
-| `photo_paths` | `text[]` | up to 20 originals, kept |
+| column        | type            | notes                                            |
+| ------------- | --------------- | ------------------------------------------------ |
+| `id`          | `uuid` pk       |                                                  |
+| `status`      | `upload_status` | `processing` → `in_review` → `done`, or `failed` |
+| `photo_paths` | `text[]`        | up to 20 originals, kept                         |
 
 Flow: the client puts the photos in Storage, inserts the row (`processing`), then calls the upload Edge Function with its id. The function sets `in_review` (Items inserted) or `failed`. The client sets `done` when the User finishes review. That doesn't start a Feed.
 
 **`items`**
 
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` pk | |
-| `upload_id` | `uuid` → `uploads` | |
-| `status` | `item_status` | `in_review` until confirmed; only `in_wardrobe` rows are the Wardrobe |
-| `category` | `text` → `categories` | slot via join |
-| `primary_colour` | `colour_family` | |
-| `secondary_colour` | `colour_family` null | |
-| `tradition` | `tradition` | |
-| `pattern` | `pattern` | |
-| `name` | `text` | |
-| `name_set_by_user` | `bool` default false | the rewrite call keeps a hand-typed name |
-| `description` | `text` | |
-| `crop_path` | `text` | the one SAM 3 cutout; also the Item's image in the Wardrobe and the generation reference |
-| `excluded_from_outfits` | `bool` default false | "Don't use in Outfits"; excluded rows are never sent to selection or Style Me |
+| column                  | type                  | notes                                                                                    |
+| ----------------------- | --------------------- | ---------------------------------------------------------------------------------------- |
+| `id`                    | `uuid` pk             |                                                                                          |
+| `upload_id`             | `uuid` → `uploads`    |                                                                                          |
+| `status`                | `item_status`         | `in_review` until confirmed; only `in_wardrobe` rows are the Wardrobe                    |
+| `category`              | `text` → `categories` | slot via join                                                                            |
+| `primary_colour`        | `colour_family`       |                                                                                          |
+| `secondary_colour`      | `colour_family` null  |                                                                                          |
+| `tradition`             | `tradition`           |                                                                                          |
+| `pattern`               | `pattern`             |                                                                                          |
+| `name`                  | `text`                |                                                                                          |
+| `name_set_by_user`      | `bool` default false  | the rewrite call keeps a hand-typed name                                                 |
+| `description`           | `text`                |                                                                                          |
+| `crop_path`             | `text`                | the one SAM 3 cutout; also the Item's image in the Wardrobe and the generation reference |
+| `excluded_from_outfits` | `bool` default false  | "Don't use in Outfits"; excluded rows are never sent to selection or Style Me            |
 
 Review actions: **confirm** sets `in_wardrobe`; **fix** updates fields; **merge** keeps one Item and deletes the other; **delete** deletes the row. Deleting a Wardrobe Item is the same hard delete.
 
@@ -116,30 +116,30 @@ Review actions: **confirm** sets `in_wardrobe`; **fix** updates fields; **merge*
 
 **`outfits`**: every generated Outfit, Feed or Style Me.
 
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` pk | |
-| `caption` | `text` | e.g. "Your indigo kurta with ivory chinos and tan kolhapuris (suggested)" |
+| column         | type           | notes                                                                                                    |
+| -------------- | -------------- | -------------------------------------------------------------------------------------------------------- |
+| `id`           | `uuid` pk      |                                                                                                          |
+| `caption`      | `text`         | e.g. "Your indigo kurta with ivory chinos and tan kolhapuris (suggested)"                                |
 | `image_status` | `image_status` | `ready`, `failed`, or `over_limit` (the image budget is used up, or the Style Me daily limit is reached) |
-| `image_path` | `text` null | set only when `ready` |
+| `image_path`   | `text` null    | set only when `ready`                                                                                    |
 
 Calls are interactive, so a row is written after generation finishes and there's no `pending` state. The Feed function writes an Outfit only when its image is `ready`; Style Me always writes one so the thread can show the image, the error, or the limit message.
 
 **`outfit_items`**: the Wardrobe Items in an Outfit.
 
-| column | type | notes |
-|---|---|---|
+| column      | type                          | notes   |
+| ----------- | ----------------------------- | ------- |
 | `outfit_id` | → `outfits` on delete cascade | pk part |
-| `item_id` | → `items` on delete cascade | pk part |
+| `item_id`   | → `items` on delete cascade   | pk part |
 
 **`suggested_items`**: each belongs to exactly one Outfit; a recurring kind of piece is a new row.
 
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` pk | |
-| `outfit_id` | → `outfits` on delete cascade | |
-| `category` … `description` | as on `items` | same fields, no `status` or `crop_path` |
-| `price_band` | `price_band` | |
+| column                     | type                          | notes                                   |
+| -------------------------- | ----------------------------- | --------------------------------------- |
+| `id`                       | `uuid` pk                     |                                         |
+| `outfit_id`                | → `outfits` on delete cascade |                                         |
+| `category` … `description` | as on `items`                 | same fields, no `status` or `crop_path` |
+| `price_band`               | `price_band`                  |                                         |
 
 Buy links aren't stored. The app builds retailer search links (Myntra, Ajio, Amazon.in, Flipkart) from the Suggested Item's name and fields. There is no Lens lookup and no SAM 3 cutout. Style Me shows no buy links.
 
@@ -147,12 +147,12 @@ Buy links aren't stored. The app builds retailer search links (Myntra, Ajio, Ama
 
 **`feed_runs`**: one row per press of "Generate Feed".
 
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` pk | |
-| `feed_date` | `date` | `ist_today` when pressed |
-| `status` | `feed_status` | |
-| `error` | `text` null | shown on the Feed tab when the latest run `failed` |
+| column      | type          | notes                                              |
+| ----------- | ------------- | -------------------------------------------------- |
+| `id`        | `uuid` pk     |                                                    |
+| `feed_date` | `date`        | `ist_today` when pressed                           |
+| `status`    | `feed_status` |                                                    |
+| `error`     | `text` null   | shown on the Feed tab when the latest run `failed` |
 
 The Feed function first checks the User's `ok` runs for `ist_today`. At 3 it refuses, and the app has already disabled the button. A `failed` run (selection failed, so no images) doesn't count, so pressing again is the retry. While a Feed is being made, the app disables the button, so a double tap can't start two Feeds.
 
@@ -160,19 +160,19 @@ The Feed tab shows today's Posts that aren't dismissed, ordered by the run's `cr
 
 **`posts`**
 
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` pk | |
-| `outfit_id` | `uuid` unique → `outfits` | |
-| `feed_run_id` | `uuid` → `feed_runs` | |
-| `feed_date` | `date` | |
-| `stylist_id` | `text` → `stylists` | the Stylist tag |
-| `position` | `int` 1–3 | |
-| `saved_at` | `timestamptz` null | unsave sets it back to null |
-| `dismissed_at` | `timestamptz` null | no undo |
-| `dismiss_reason` | `dismiss_reason` null | optional even when dismissed |
-| `dismissed_item_id` | `uuid` null → `items` on delete set null | only with `dislike_piece` |
-| `dismissed_suggested_item_id` | `uuid` null → `suggested_items` | only with `dislike_piece` |
+| column                        | type                                     | notes                        |
+| ----------------------------- | ---------------------------------------- | ---------------------------- |
+| `id`                          | `uuid` pk                                |                              |
+| `outfit_id`                   | `uuid` unique → `outfits`                |                              |
+| `feed_run_id`                 | `uuid` → `feed_runs`                     |                              |
+| `feed_date`                   | `date`                                   |                              |
+| `stylist_id`                  | `text` → `stylists`                      | the Stylist tag              |
+| `position`                    | `int` 1–3                                |                              |
+| `saved_at`                    | `timestamptz` null                       | unsave sets it back to null  |
+| `dismissed_at`                | `timestamptz` null                       | no undo                      |
+| `dismiss_reason`              | `dismiss_reason` null                    | optional even when dismissed |
+| `dismissed_item_id`           | `uuid` null → `items` on delete set null | only with `dislike_piece`    |
+| `dismissed_suggested_item_id` | `uuid` null → `suggested_items`          | only with `dislike_piece`    |
 
 Checks: `saved_at is null or dismissed_at is null`; the two `dismissed_*_id` columns are null unless `dismiss_reason = 'dislike_piece'`, and at most one is set.
 
@@ -182,12 +182,12 @@ The **Saved list** is `saved_at is not null order by saved_at desc`, kept for go
 
 **`style_me_messages`**: one continuous thread per User.
 
-| column | type | notes |
-|---|---|---|
-| `id` | `uuid` pk | |
-| `kind` | `message_kind` | `user`, `assistant` or `divider` ("New conversation") |
-| `body` | `text` null | null for dividers |
-| `outfit_id` | `uuid` null → `outfits` | assistant replies that propose an Outfit |
+| column      | type                    | notes                                                 |
+| ----------- | ----------------------- | ----------------------------------------------------- |
+| `id`        | `uuid` pk               |                                                       |
+| `kind`      | `message_kind`          | `user`, `assistant` or `divider` ("New conversation") |
+| `body`      | `text` null             | null for dividers                                     |
+| `outfit_id` | `uuid` null → `outfits` | assistant replies that propose an Outfit              |
 
 The thread is every row ordered by `created_at`. The model's context is the rows after the last divider, capped at the latest 20.
 
@@ -197,11 +197,11 @@ The thread is every row ordered by `created_at`. The model's context is the rows
 
 **`image_budget`**: a single row, not owned by a User, that caps the total number of Nano Banana calls. A migration inserts it with `used = 0, cap = 30`. The local seed raises `cap` to 1000 (amended by [How does hosted get its reference data and first Wardrobe?](https://github.com/suyashpatel98/WearAI/issues/64)).
 
-| column | type | notes |
-|---|---|---|
-| `id` | `boolean` pk default `true`, check `id` | keeps it to one row |
-| `used` | `int` | |
-| `cap` | `int` | raised on hosted by a migration |
+| column | type                                    | notes                           |
+| ------ | --------------------------------------- | ------------------------------- |
+| `id`   | `boolean` pk default `true`, check `id` | keeps it to one row             |
+| `used` | `int`                                   |                                 |
+| `cap`  | `int`                                   | raised on hosted by a migration |
 
 Before every image call, Feed or Style Me, the Edge Function reserves a slot:
 

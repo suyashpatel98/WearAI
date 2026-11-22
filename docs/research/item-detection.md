@@ -25,7 +25,7 @@ Which hosted models can take up to 20 camera-roll photos and:
 
 ## 1. Multimodal LLMs
 
-### Gemini: the only major LLM API with documented detection *and* segmentation
+### Gemini: the only major LLM API with documented detection _and_ segmentation
 
 - **Object detection.** The model returns `box_2d` as `[ymin, xmin, ymax, xmax]`, normalised to 0–1000, which you rescale to the original image. Prompts can be custom, for example "only the clothes worn by the person who matches these Reference Photos". [Gemini API: Image understanding](https://aistudio.google.com/docs/image-understanding)
 - **Segmentation.** "Starting with Gemini 2.5, models not only detect items but also segment them". Output is JSON with `box_2d`, `label` and `mask`. The mask is described as a base64 PNG probability map (0–255). The code samples on the same page treat `mask` as a polygon, and the page does not reconcile the two. Google recommends setting thinking to `"minimal"` for better segmentation. Its samples use `gemini-3.8-flash`. [Image understanding](https://aistudio.google.com/docs/image-understanding)
@@ -33,14 +33,15 @@ Which hosted models can take up to 20 camera-roll photos and:
 - **Image limits.** Up to 3,600 images per request. Inline requests are capped at 20 MB in total, so use the File API above that. JPEG, PNG, WEBP, HEIC and HEIF are accepted. [Image understanding](https://aistudio.google.com/docs/image-understanding)
 - **Image token cost (Gemini 3/4).** `media_resolution` sets tokens per image:
 
-  | Setting | Tokens per image |
-  |---|---|
-  | `low` | 280 |
-  | `medium` | 560 |
-  | `high` (also the default) | 1120 |
-  | `ultra_high` | 2240 |
+  | Setting                   | Tokens per image |
+  | ------------------------- | ---------------- |
+  | `low`                     | 280              |
+  | `medium`                  | 560              |
+  | `high` (also the default) | 1120             |
+  | `ultra_high`              | 2240             |
 
   Google recommends `high` for most image analysis. You can set it per image, for example `low` for Reference Photos. [Media resolution](https://aistudio.google.com/docs/media-resolution)
+
 - **Structured outputs** are supported on the current Flash and Flash-Lite models, so attributes can be held to the fixed value lists that #11 decides. [3.8 Flash](https://aistudio.google.com/docs/models/gemini-3.8-flash), [3.5 Flash-Lite](https://aistudio.google.com/docs/models/gemini-3.5-flash-lite)
 - **Accuracy and latency.** Google publishes no accuracy or latency figures for detection or segmentation. #10 has to measure them.
 
@@ -48,14 +49,14 @@ Which hosted models can take up to 20 camera-roll photos and:
 
 From [Gemini API pricing](https://aistudio.google.com/docs/pricing) and [Models](https://aistudio.google.com/docs/models):
 
-| Model | Code | Status | Input (image) | Output | Batch in/out |
-|---|---|---|---|---|---|
-| Gemini 3.8 Flash | `gemini-3.8-flash` | New, stable (Sept 2026) | $0.75 → **$1.50 from 1 Jan 2027** | $3.75 → **$7.50 from 1 Jan 2027** | half |
-| Gemini 3.6 Flash | `gemini-3.6-flash` | Stable, previous gen | same as 3.8 Flash | same | half |
-| Gemini 3.5 Flash-Lite | `gemini-3.5-flash-lite` | Stable (July 2026) | $0.30 | $2.50 | $0.15 / $1.25 |
-| Gemini 3.1 Flash-Lite | `gemini-3.1-flash-lite` | Stable (May 2026) | $0.25 | $1.50 | $0.125 / $0.75 |
-| Gemini 2.5 Flash | `gemini-2.5-flash` | **Deprecated; routes to 3.5 Flash-Lite on 1 Dec 2026** | $0.30 | $2.50 | — |
-| Gemini Robotics ER 2 | `gemini-robotics-er-2-preview` | Preview | $1.00 → $2.00 | $5 → $10 | — |
+| Model                 | Code                           | Status                                                 | Input (image)                     | Output                            | Batch in/out   |
+| --------------------- | ------------------------------ | ------------------------------------------------------ | --------------------------------- | --------------------------------- | -------------- |
+| Gemini 3.8 Flash      | `gemini-3.8-flash`             | New, stable (Sept 2026)                                | $0.75 → **$1.50 from 1 Jan 2027** | $3.75 → **$7.50 from 1 Jan 2027** | half           |
+| Gemini 3.6 Flash      | `gemini-3.6-flash`             | Stable, previous gen                                   | same as 3.8 Flash                 | same                              | half           |
+| Gemini 3.5 Flash-Lite | `gemini-3.5-flash-lite`        | Stable (July 2026)                                     | $0.30                             | $2.50                             | $0.15 / $1.25  |
+| Gemini 3.1 Flash-Lite | `gemini-3.1-flash-lite`        | Stable (May 2026)                                      | $0.25                             | $1.50                             | $0.125 / $0.75 |
+| Gemini 2.5 Flash      | `gemini-2.5-flash`             | **Deprecated; routes to 3.5 Flash-Lite on 1 Dec 2026** | $0.30                             | $2.50                             | —              |
+| Gemini Robotics ER 2  | `gemini-robotics-er-2-preview` | Preview                                                | $1.00 → $2.00                     | $5 → $10                          | —              |
 
 - **Robotics ER 2.** It "builds on Gemini 3.5 Flash with improved spatial reasoning" and does points and bounding boxes. Its page does not mention masks, and it is a preview. Use it only as a fallback if Flash boxes prove sloppy. [Robotics overview](https://aistudio.google.com/docs/robotics-overview)
 
@@ -66,10 +67,10 @@ From [Gemini API pricing](https://aistudio.google.com/docs/pricing) and [Models]
   - Output: about 30 Items with attributes and per-photo boxes, plus thinking, so about **10k output tokens**. This is a guess; #10 should log the real counts.
 - **Results.**
 
-  | Model | Price used | Cost per upload |
-  |---|---|---|
-  | Gemini 3.5 Flash-Lite | $0.30 / $2.50 | about **$0.03** |
-  | Gemini 3.8 Flash, 2026 prices | $0.75 / $3.75 | about **$0.06** |
+  | Model                           | Price used    | Cost per upload |
+  | ------------------------------- | ------------- | --------------- |
+  | Gemini 3.5 Flash-Lite           | $0.30 / $2.50 | about **$0.03** |
+  | Gemini 3.8 Flash, 2026 prices   | $0.75 / $3.75 | about **$0.06** |
   | Gemini 3.8 Flash, from Jan 2027 | $1.50 / $7.50 | about **$0.11** |
 
 - **Output dominates the cost.** Asking Gemini for masks will add a lot of output tokens, because masks come back as base64 PNG or polygons. That is a reason to get boxes from Gemini and masks from SAM 3.
@@ -92,7 +93,7 @@ Source: [docs](https://docs.ximilar.com/tagging/fashion), [taxonomy](https://doc
   - `detect_tags_all` detects and tags every fashion item.
   - `meta` covers background, scene and view.
   - `region` classifies apparel as `indian` or `generic`. The effect of passing a region to `detect_tags` is undocumented.
-  - `aggregate_labels=true` treats a batch as several photos of *one* object. That does not solve merging across a mixed upload.
+  - `aggregate_labels=true` treats a batch as several photos of _one_ object. That does not solve merging across a mixed upload.
   - At most 10 records per request.
 - **Attributes.** Color, Pattern, Material, Design, Style, Occasion, Gender, Age, Sleeves, Length, Neckline, Fit, Cut, Closure and more.
 - **Weak spots for WearAI.**
@@ -100,16 +101,16 @@ Source: [docs](https://docs.ximilar.com/tagging/fashion), [taxonomy](https://doc
   - **Other people.** Nothing documents how it handles several people in one photo.
 - **Price.** The credit cost depends on the operation:
 
-  | Operation | Credits per image |
-  |---|---|
-  | Tag all items | 60 |
-  | Tag main item | 20 |
-  | Detect only | 5 |
-  | Background removal, fast | 10 |
-  | Background removal, precise | 50 |
-
+  | Operation                   | Credits per image |
+  | --------------------------- | ----------------- |
+  | Tag all items               | 60                |
+  | Tag main item               | 20                |
+  | Detect only                 | 5                 |
+  | Background removal, fast    | 10                |
+  | Background removal, precise | 50                |
   - Plans: Free has 1,000 credits a month. Business 100K is €59 / $69 a month. The price cells on the pricing page were garbled, so check the live page.
   - Per upload: 20 photos × 60 credits = 1,200 credits, about **$0.83 per upload** on Business 100K. That is roughly 10–25× the Gemini estimate.
+
 - **Latency.** Sample responses show about 1–1.7 s per call. These are examples, not a benchmark.
 - **Verdict.** Use it as a benchmark in #10, not as the primary choice.
 
@@ -124,7 +125,7 @@ Source: [fal.ai SAM 3 image endpoint](https://fal.ai/models/fal-ai/sam-3/image)
 - **Limits.**
   - It does not classify attributes.
   - It does not know which person is the User. A text prompt like "shirt" masks everyone's shirt.
-  - **So:** use it *after* Gemini, with Gemini's boxes as prompts.
+  - **So:** use it _after_ Gemini, with Gemini's boxes as prompts.
 
 ### Others not shortlisted
 
@@ -140,14 +141,15 @@ Sources: [Image generation](https://aistudio.google.com/docs/image-generation), 
   - **Clean product shot.** Generated from the crop by a Nano Banana model ("this garment, laid flat, plain background").
 - **Nano Banana models and prices.**
 
-  | Model | Code | Price per image | Notes |
-  |---|---|---|---|
-  | Nano Banana 2 Lite | `gemini-3.1-flash-lite-image` | $0.0336 per 1K image ($0.0168 batch) | Fastest and cheapest; "not optimized for multiple reference inputs" |
-  | Nano Banana 2 | `gemini-3.1-flash-image` | $0.045 at 0.5K, $0.067 at 1K | — |
-  | Nano Banana 2.1 | `gemini-nano-banana-2.1` | $0.0336 at 1K | Input costs $1.50 per 1M tokens |
-  | Nano Banana (2.5 Flash Image) | `gemini-2.5-flash-image` | $0.039 | Shuts down 15 March 2027 |
+  | Model                         | Code                          | Price per image                      | Notes                                                               |
+  | ----------------------------- | ----------------------------- | ------------------------------------ | ------------------------------------------------------------------- |
+  | Nano Banana 2 Lite            | `gemini-3.1-flash-lite-image` | $0.0336 per 1K image ($0.0168 batch) | Fastest and cheapest; "not optimized for multiple reference inputs" |
+  | Nano Banana 2                 | `gemini-3.1-flash-image`      | $0.045 at 0.5K, $0.067 at 1K         | —                                                                   |
+  | Nano Banana 2.1               | `gemini-nano-banana-2.1`      | $0.0336 at 1K                        | Input costs $1.50 per 1M tokens                                     |
+  | Nano Banana (2.5 Flash Image) | `gemini-2.5-flash-image`      | $0.039                               | Shuts down 15 March 2027                                            |
 
   All generated images carry a SynthID watermark.
+
 - **Cost.** With about 30 Items per upload, clean shots cost **about $0.50–$1.00 per upload** (batch at the low end). That is 10–30× the detection cost.
 - **Risk.** A generated "clean" Item can drift from the real one: wrong print, wrong embroidery. That matters for Indian wear.
 - **Recommendation.**
@@ -173,7 +175,7 @@ Sources: [Image generation](https://aistudio.google.com/docs/image-generation), 
 - **No dedicated API offers "only this person's clothes"** as a feature. The practical approach is to give Gemini the Reference Photos with each request and tell it to return Items only for the matching person.
 - **Policy.**
   - Google's Generative AI Prohibited Use Policy bans "using personal data or biometrics without legally-required consent" (§1.6). [Prohibited Use Policy](https://policies.google.com/terms/generative-ai/use-policy) (last modified 17 Dec 2024)
-  - We ask the model to pick *the consenting User* out of the photo by appearance. We do not identify or store anyone else. Even so, the consent wording and the treatment of bystanders in uploaded photos belong with the privacy and retention work.
+  - We ask the model to pick _the consenting User_ out of the photo by appearance. We do not identify or store anyone else. Even so, the consent wording and the treatment of bystanders in uploaded photos belong with the privacy and retention work.
 
 ## 6. Terms that matter
 
@@ -204,13 +206,13 @@ Source: [Gemini API Additional Terms](https://aistudio.google.com/docs/terms) (e
 
 ## 8. Shortlist for prototype #10
 
-| # | Pipeline | Role |
-|---|---|---|
-| 1 | **Gemini 3.8 Flash** (one call per upload, boxes + attributes + merge) → **SAM 3 on fal.ai** (box-prompted masks) | Primary candidate |
-| 2 | Same as 1, but with **Gemini 3.5 Flash-Lite** | Cheaper variant; compare quality per dollar |
-| 3 | Gemini 3.8 Flash returning **segmentation masks itself** (no SAM 3) | Simpler; check mask quality, output-token cost and the `minimal`-thinking conflict |
-| 4 | **Ximilar `detect_tags_all`** on the same 20 photos | Benchmark for detection and attributes; note handling of Indian wear and bystanders |
-| 5 | Optional: **Nano Banana 2 Lite** clean shots for a few Items | Only to judge whether clean shots are needed at all |
+| #   | Pipeline                                                                                                          | Role                                                                                |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| 1   | **Gemini 3.8 Flash** (one call per upload, boxes + attributes + merge) → **SAM 3 on fal.ai** (box-prompted masks) | Primary candidate                                                                   |
+| 2   | Same as 1, but with **Gemini 3.5 Flash-Lite**                                                                     | Cheaper variant; compare quality per dollar                                         |
+| 3   | Gemini 3.8 Flash returning **segmentation masks itself** (no SAM 3)                                               | Simpler; check mask quality, output-token cost and the `minimal`-thinking conflict  |
+| 4   | **Ximilar `detect_tags_all`** on the same 20 photos                                                               | Benchmark for detection and attributes; note handling of Indian wear and bystanders |
+| 5   | Optional: **Nano Banana 2 Lite** clean shots for a few Items                                                      | Only to judge whether clean shots are needed at all                                 |
 
 **What #10 should log for each candidate:**
 
