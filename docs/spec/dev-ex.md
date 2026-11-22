@@ -523,7 +523,7 @@ To check when it's built:
 - whether Dependabot's `deno` ecosystem reads a `deno.json` that sits next to `_shared/` without its own lockfile. The skeleton has no functions, so the `deno` entry is committed commented out. The first function's PR turns it on and answers this;
 - whether Dependabot handles the pnpm version that `mise.toml` pins. This is answered by the first monthly run.
 
-As built, the npm ignore list also includes `@types/react`, `typescript` and `eslint-config-expo`, because the Expo SDK pins those too and `expo install --check` flags them.
+As built, the npm ignore list also includes `eslint-config-expo`, because the Expo SDK pins it too and `expo install --check` flags it.
 
 ## Reference data and seed
 

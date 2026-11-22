@@ -15,8 +15,6 @@ updates:
       - dependency-name: "react-native"
       - dependency-name: "react-native-*"
       - dependency-name: "@react-native/*"
-      - dependency-name: "@types/react"
-      - dependency-name: "typescript"
       - dependency-name: "eslint-config-expo"
     groups:
       npm:
