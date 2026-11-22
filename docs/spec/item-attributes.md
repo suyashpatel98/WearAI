@@ -11,16 +11,16 @@ What every Item and Suggested Item carries, and the fixed values each field can 
 
 ## Fields
 
-| Field | Kind | Required | Notes |
-|---|---|---|---|
-| `category` | fixed list (below) | yes | Decides the slot. |
-| `slot` | derived from `category` | — | Never stored or edited on its own. To change the slot, change the category. |
-| `primary_colour` | colour family | yes | Used in the "same kind of piece" check. |
-| `secondary_colour` | colour family | no | Leave it empty for a single-colour piece. |
-| `tradition` | `ethnic` / `western` / `fusion` | yes | Indian Traditional and Indo-Western have rules about it. |
-| `pattern` | fixed list (below) | yes | |
-| `name` | text, 2–4 words | yes | Shown in the app and used in captions, e.g. "Indigo block-print kurta". |
-| `description` | text, one sentence | yes | For the selection LLM only. Holds what the fixed fields can't: exact shade, visible fabric or texture, fit, length, neckline, sleeves, embellishment, weight. E.g. "Knee-length indigo cotton kurta with a white block-print yoke and mandarin collar; relaxed fit, looks lightweight." |
+| Field              | Kind                            | Required | Notes                                                                                                                                                                                                                                                                                   |
+| ------------------ | ------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `category`         | fixed list (below)              | yes      | Decides the slot.                                                                                                                                                                                                                                                                       |
+| `slot`             | derived from `category`         | —        | Never stored or edited on its own. To change the slot, change the category.                                                                                                                                                                                                             |
+| `primary_colour`   | colour family                   | yes      | Used in the "same kind of piece" check.                                                                                                                                                                                                                                                 |
+| `secondary_colour` | colour family                   | no       | Leave it empty for a single-colour piece.                                                                                                                                                                                                                                               |
+| `tradition`        | `ethnic` / `western` / `fusion` | yes      | Indian Traditional and Indo-Western have rules about it.                                                                                                                                                                                                                                |
+| `pattern`          | fixed list (below)              | yes      |                                                                                                                                                                                                                                                                                         |
+| `name`             | text, 2–4 words                 | yes      | Shown in the app and used in captions, e.g. "Indigo block-print kurta".                                                                                                                                                                                                                 |
+| `description`      | text, one sentence              | yes      | For the selection LLM only. Holds what the fixed fields can't: exact shade, visible fabric or texture, fit, length, neckline, sleeves, embellishment, weight. E.g. "Knee-length indigo cotton kurta with a white block-print yoke and mandarin collar; relaxed fit, looks lightweight." |
 
 A **Suggested Item** has the same fields plus a **price band**, taken from the User's Style Profile budget.
 
@@ -61,105 +61,105 @@ Activewear is kept, because the Athleisure Stylist needs it.
 
 ### Top (12)
 
-| id | Label |
-|---|---|
-| `tshirt` | T-shirt |
-| `polo` | Polo |
-| `shirt` | Shirt |
-| `blouse_top` | Blouse / top |
-| `crop_top` | Crop top |
-| `tank_camisole` | Tank top / camisole |
-| `sweater` | Sweater (pullover) |
+| id                  | Label                          |
+| ------------------- | ------------------------------ |
+| `tshirt`            | T-shirt                        |
+| `polo`              | Polo                           |
+| `shirt`             | Shirt                          |
+| `blouse_top`        | Blouse / top                   |
+| `crop_top`          | Crop top                       |
+| `tank_camisole`     | Tank top / camisole            |
+| `sweater`           | Sweater (pullover)             |
 | `sweatshirt_hoodie` | Sweatshirt / hoodie (pullover) |
-| `kurta` | Kurta / kurti / kameez |
-| `sherwani` | Sherwani |
-| `sports_top` | Sports top / sports bra |
-| `other_top` | Other top |
+| `kurta`             | Kurta / kurti / kameez         |
+| `sherwani`          | Sherwani                       |
+| `sports_top`        | Sports top / sports bra        |
+| `other_top`         | Other top                      |
 
 A sherwani is worn closed over a churidar, so it fills the top slot.
 
 ### Bottom (14)
 
-| id | Label |
-|---|---|
-| `jeans` | Jeans |
-| `trousers` | Trousers |
-| `chinos` | Chinos |
-| `shorts` | Shorts |
-| `skirt` | Skirt |
-| `ethnic_skirt` | Ethnic skirt (incl. a lehenga skirt worn on its own) |
-| `joggers_trackpants` | Joggers / track pants |
-| `leggings` | Leggings / jeggings |
-| `churidar_pyjama` | Churidar / pyjama |
-| `salwar_patiala` | Salwar / patiala |
-| `palazzo` | Palazzo / wide-leg ethnic pants |
-| `dhoti` | Dhoti / veshti / dhoti pants |
-| `sharara_gharara` | Sharara / gharara |
-| `other_bottom` | Other bottom |
+| id                   | Label                                                |
+| -------------------- | ---------------------------------------------------- |
+| `jeans`              | Jeans                                                |
+| `trousers`           | Trousers                                             |
+| `chinos`             | Chinos                                               |
+| `shorts`             | Shorts                                               |
+| `skirt`              | Skirt                                                |
+| `ethnic_skirt`       | Ethnic skirt (incl. a lehenga skirt worn on its own) |
+| `joggers_trackpants` | Joggers / track pants                                |
+| `leggings`           | Leggings / jeggings                                  |
+| `churidar_pyjama`    | Churidar / pyjama                                    |
+| `salwar_patiala`     | Salwar / patiala                                     |
+| `palazzo`            | Palazzo / wide-leg ethnic pants                      |
+| `dhoti`              | Dhoti / veshti / dhoti pants                         |
+| `sharara_gharara`    | Sharara / gharara                                    |
+| `other_bottom`       | Other bottom                                         |
 
 ### One-piece (6)
 
-| id | Label |
-|---|---|
-| `saree` | Saree (incl. pre-draped) |
-| `lehenga_set` | Lehenga set |
-| `anarkali_gown` | Anarkali / ethnic gown |
-| `dress` | Dress / kaftan |
-| `jumpsuit` | Jumpsuit / playsuit / dungarees |
-| `other_one_piece` | Other one-piece |
+| id                | Label                           |
+| ----------------- | ------------------------------- |
+| `saree`           | Saree (incl. pre-draped)        |
+| `lehenga_set`     | Lehenga set                     |
+| `anarkali_gown`   | Anarkali / ethnic gown          |
+| `dress`           | Dress / kaftan                  |
+| `jumpsuit`        | Jumpsuit / playsuit / dungarees |
+| `other_one_piece` | Other one-piece                 |
 
 A short anarkali kurta worn with a churidar is a `kurta`. A floor-length anarkali worn as a complete piece is an `anarkali_gown`.
 
 ### Footwear (12)
 
-| id | Label |
-|---|---|
-| `sneakers` | Sneakers |
-| `sports_shoes` | Running / training shoes |
-| `loafers` | Loafers / moccasins |
-| `formal_shoes` | Formal shoes (oxfords, derbies, brogues) |
-| `boots` | Boots |
-| `sandals` | Sandals |
-| `slides_flipflops` | Slides / flip-flops |
-| `heels` | Heels / wedges |
-| `flats` | Flats / ballet flats / mules |
-| `juttis_mojaris` | Juttis / mojaris |
-| `kolhapuris` | Kolhapuris |
-| `other_footwear` | Other footwear |
+| id                 | Label                                    |
+| ------------------ | ---------------------------------------- |
+| `sneakers`         | Sneakers                                 |
+| `sports_shoes`     | Running / training shoes                 |
+| `loafers`          | Loafers / moccasins                      |
+| `formal_shoes`     | Formal shoes (oxfords, derbies, brogues) |
+| `boots`            | Boots                                    |
+| `sandals`          | Sandals                                  |
+| `slides_flipflops` | Slides / flip-flops                      |
+| `heels`            | Heels / wedges                           |
+| `flats`            | Flats / ballet flats / mules             |
+| `juttis_mojaris`   | Juttis / mojaris                         |
+| `kolhapuris`       | Kolhapuris                               |
+| `other_footwear`   | Other footwear                           |
 
 ### Outer layer (12)
 
-| id | Label |
-|---|---|
-| `blazer` | Blazer / suit jacket |
-| `jacket` | Jacket (denim, bomber, leather, puffer) |
-| `coat` | Coat / overcoat / trench |
-| `cardigan_shrug` | Cardigan / shrug |
-| `overshirt` | Overshirt / shacket |
-| `zip_hoodie` | Zip hoodie / track jacket |
-| `nehru_jacket` | Nehru jacket |
-| `bandhgala` | Bandhgala / jodhpuri jacket |
-| `ethnic_jacket` | Ethnic jacket / koti / cape |
-| `waistcoat` | Waistcoat / vest |
-| `shawl` | Shawl |
-| `other_outer_layer` | Other outer layer |
+| id                  | Label                                   |
+| ------------------- | --------------------------------------- |
+| `blazer`            | Blazer / suit jacket                    |
+| `jacket`            | Jacket (denim, bomber, leather, puffer) |
+| `coat`              | Coat / overcoat / trench                |
+| `cardigan_shrug`    | Cardigan / shrug                        |
+| `overshirt`         | Overshirt / shacket                     |
+| `zip_hoodie`        | Zip hoodie / track jacket               |
+| `nehru_jacket`      | Nehru jacket                            |
+| `bandhgala`         | Bandhgala / jodhpuri jacket             |
+| `ethnic_jacket`     | Ethnic jacket / koti / cape             |
+| `waistcoat`         | Waistcoat / vest                        |
+| `shawl`             | Shawl                                   |
+| `other_outer_layer` | Other outer layer                       |
 
 ### Accessory (12)
 
-| id | Label |
-|---|---|
-| `bag` | Bag (handbag, sling, tote, clutch, potli, backpack) |
-| `watch` | Watch |
-| `belt` | Belt |
-| `sunglasses` | Sunglasses |
-| `hat_cap` | Hat / cap |
-| `scarf` | Scarf / muffler |
-| `dupatta_stole` | Dupatta / stole |
-| `necklace` | Necklace |
-| `earrings` | Earrings / jhumkas |
-| `bangles_bracelets` | Bangles / bracelets |
-| `tie_pocket_square` | Tie / pocket square |
-| `other_accessory` | Other accessory (rings, hair accessories, maang tikka, brooch) |
+| id                  | Label                                                          |
+| ------------------- | -------------------------------------------------------------- |
+| `bag`               | Bag (handbag, sling, tote, clutch, potli, backpack)            |
+| `watch`             | Watch                                                          |
+| `belt`              | Belt                                                           |
+| `sunglasses`        | Sunglasses                                                     |
+| `hat_cap`           | Hat / cap                                                      |
+| `scarf`             | Scarf / muffler                                                |
+| `dupatta_stole`     | Dupatta / stole                                                |
+| `necklace`          | Necklace                                                       |
+| `earrings`          | Earrings / jhumkas                                             |
+| `bangles_bracelets` | Bangles / bracelets                                            |
+| `tie_pocket_square` | Tie / pocket square                                            |
+| `other_accessory`   | Other accessory (rings, hair accessories, maang tikka, brooch) |
 
 ## Colour families (22)
 
@@ -169,17 +169,17 @@ Exact shades ("dusty rose", "bottle green") go in `description`. Use `multicolou
 
 ## Patterns (12)
 
-| id | Label |
-|---|---|
-| `solid` | Solid |
-| `stripes` | Stripes |
-| `checks` | Checks / plaid |
-| `floral` | Floral |
-| `block_print` | Block print |
-| `woven_pattern` | Ikat / woven pattern |
-| `paisley_motif` | Paisley / motif |
-| `embroidered` | Embroidered / embellished |
-| `graphic_logo` | Graphic / logo |
-| `polka_dot` | Polka dot |
-| `animal_print` | Animal print |
-| `other_print` | Abstract / other print |
+| id              | Label                     |
+| --------------- | ------------------------- |
+| `solid`         | Solid                     |
+| `stripes`       | Stripes                   |
+| `checks`        | Checks / plaid            |
+| `floral`        | Floral                    |
+| `block_print`   | Block print               |
+| `woven_pattern` | Ikat / woven pattern      |
+| `paisley_motif` | Paisley / motif           |
+| `embroidered`   | Embroidered / embellished |
+| `graphic_logo`  | Graphic / logo            |
+| `polka_dot`     | Polka dot                 |
+| `animal_print`  | Animal print              |
+| `other_print`   | Abstract / other print    |

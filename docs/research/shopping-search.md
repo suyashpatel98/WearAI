@@ -37,27 +37,27 @@ Starting from a **generated image of a garment** or a **text description** of a 
   - **Vertex AI Search / Agent Search website search.** It costs $4 per 1,000 queries and is billed for every indexed page, so it is not meant for indexing other companies' catalogues.
 - **Biggest risks:**
   1. Scrapers depend on Google's page layout. Google removed the Lens **Products** tab on **2026-10-07**, which killed SerpApi's and SearchApi's `products` mode.
-  2. Lens quality on *AI-generated* garment images is unproven. A prototype ticket should measure it.
+  2. Lens quality on _AI-generated_ garment images is unproven. A prototype ticket should measure it.
   3. A generated image shows the User's likeness. **Never send the User's face to a third party.** Send a crop of the garment, or a separately generated flat-lay image of the Suggested Item.
 
 ## Comparison
 
-| Option | Indian retailer coverage | Input | Price per lookup | Rate limit | Terms for a mobile-app backend |
-|---|---|---|---|---|---|
-| **SearchApi.io Google Lens** | Whatever Google Lens indexes. India is in its list of countries with shopping results | Image URL (+ optional `q`) | $0.004 (10k/mo plan) → $0.0025 (100k) → $0.0015 (1M) | 20% of monthly credits per hour | Server-side use. "Legal Protection Guarantee" on Production and higher plans, US law, covers its collection, not your use |
-| **SerpApi Google Lens** | Same as above. `country=in` supported | Image URL or uploaded `image_id` (+ optional `q`) | $0.015 (5k/mo) → $0.010 (15k) → $0.0092 (30k) → $0.00725 (100k) | 1,000/hr on Developer, 3,000/hr on Production | No reselling without permission. US Legal Shield from Production up. Search data kept 31 days unless ZeroTrace mode |
-| SerpApi Google Shopping | Google Shopping India (`gl=in`) | Text | Same credits as above | Same | `product_link` points to Google, so a second call is needed for the merchant URL |
-| **Retailer search deep links** (+ optional Cuelinks) | Any retailer with a search URL | Text | $0 | None | Plain links. Cuelinks campaign rules apply only if affiliate links are used |
-| Amazon Creators API | Amazon.in only | Text (keywords, browse nodes) | Free | 1 TPS / 8,640 per day at first, scaling with referred revenue | Needs an Associates account plus **10 qualifying sales in 30 days**. Access lapses without sales |
-| Flipkart Affiliate API | Flipkart only | Text search, or full product feed | Free | Not documented. 500 products per feed page | Registered affiliates only. Sign-up status unclear |
-| Cuelinks API v3 | Link conversion for Myntra, Ajio, Flipkart and more (no product search) | Product URL | Free tier (read only). Write access is "Publisher Plus", revenue share | "Scales with plan" | Myntra campaign allows app tracking. Ajio's notes say app tracking is "offline" |
-| EarnKaro | Myntra, Flipkart and more | Manual links only | — | — | No public API |
-| Gemini Grounding with Google Search | Google Search | Text (+ image for image models) | $14 per 1,000 (Gemini 3+) after 5,000 free per month | 1,500 per day cap | Forbids link tracking, storage and mixing in other content. Results may only be shown to the user who sent the prompt |
-| Cloud Vision Web Detection | The open web. No domain filter, no prices | Image | $3.50 per 1,000 after 1,000 free | Cloud quotas | Official, but not a shopping tool |
-| Vision API Product Search | Only your own uploaded catalogue | Image | — | — | Needs a catalogue we don't have |
-| Vertex AI / Agent Search (website) | Up to 50 domains. Advanced indexing needs domain verification | Text | $4 per 1,000 queries (Enterprise) + about $2.38/month per 1,000 indexed pages | Cloud quotas | Not designed for indexing other companies' catalogues |
-| Custom Search JSON API | — | — | — | — | Closed to new customers. Ends 2027-01-01 |
-| Bing Visual Search | — | — | — | — | Retired 2025-08-11 |
+| Option                                               | Indian retailer coverage                                                              | Input                                             | Price per lookup                                                              | Rate limit                                                    | Terms for a mobile-app backend                                                                                            |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **SearchApi.io Google Lens**                         | Whatever Google Lens indexes. India is in its list of countries with shopping results | Image URL (+ optional `q`)                        | $0.004 (10k/mo plan) → $0.0025 (100k) → $0.0015 (1M)                          | 20% of monthly credits per hour                               | Server-side use. "Legal Protection Guarantee" on Production and higher plans, US law, covers its collection, not your use |
+| **SerpApi Google Lens**                              | Same as above. `country=in` supported                                                 | Image URL or uploaded `image_id` (+ optional `q`) | $0.015 (5k/mo) → $0.010 (15k) → $0.0092 (30k) → $0.00725 (100k)               | 1,000/hr on Developer, 3,000/hr on Production                 | No reselling without permission. US Legal Shield from Production up. Search data kept 31 days unless ZeroTrace mode       |
+| SerpApi Google Shopping                              | Google Shopping India (`gl=in`)                                                       | Text                                              | Same credits as above                                                         | Same                                                          | `product_link` points to Google, so a second call is needed for the merchant URL                                          |
+| **Retailer search deep links** (+ optional Cuelinks) | Any retailer with a search URL                                                        | Text                                              | $0                                                                            | None                                                          | Plain links. Cuelinks campaign rules apply only if affiliate links are used                                               |
+| Amazon Creators API                                  | Amazon.in only                                                                        | Text (keywords, browse nodes)                     | Free                                                                          | 1 TPS / 8,640 per day at first, scaling with referred revenue | Needs an Associates account plus **10 qualifying sales in 30 days**. Access lapses without sales                          |
+| Flipkart Affiliate API                               | Flipkart only                                                                         | Text search, or full product feed                 | Free                                                                          | Not documented. 500 products per feed page                    | Registered affiliates only. Sign-up status unclear                                                                        |
+| Cuelinks API v3                                      | Link conversion for Myntra, Ajio, Flipkart and more (no product search)               | Product URL                                       | Free tier (read only). Write access is "Publisher Plus", revenue share        | "Scales with plan"                                            | Myntra campaign allows app tracking. Ajio's notes say app tracking is "offline"                                           |
+| EarnKaro                                             | Myntra, Flipkart and more                                                             | Manual links only                                 | —                                                                             | —                                                             | No public API                                                                                                             |
+| Gemini Grounding with Google Search                  | Google Search                                                                         | Text (+ image for image models)                   | $14 per 1,000 (Gemini 3+) after 5,000 free per month                          | 1,500 per day cap                                             | Forbids link tracking, storage and mixing in other content. Results may only be shown to the user who sent the prompt     |
+| Cloud Vision Web Detection                           | The open web. No domain filter, no prices                                             | Image                                             | $3.50 per 1,000 after 1,000 free                                              | Cloud quotas                                                  | Official, but not a shopping tool                                                                                         |
+| Vision API Product Search                            | Only your own uploaded catalogue                                                      | Image                                             | —                                                                             | —                                                             | Needs a catalogue we don't have                                                                                           |
+| Vertex AI / Agent Search (website)                   | Up to 50 domains. Advanced indexing needs domain verification                         | Text                                              | $4 per 1,000 queries (Enterprise) + about $2.38/month per 1,000 indexed pages | Cloud quotas                                                  | Not designed for indexing other companies' catalogues                                                                     |
+| Custom Search JSON API                               | —                                                                                     | —                                                 | —                                                                             | —                                                             | Closed to new customers. Ends 2027-01-01                                                                                  |
+| Bing Visual Search                                   | —                                                                                     | —                                                 | —                                                                             | —                                                             | Retired 2025-08-11                                                                                                        |
 
 ## 1. Google Lens
 
@@ -65,7 +65,7 @@ Starting from a **generated image of a garment** or a **text description** of a 
 
 - Google publishes no Lens API. A Google Cloud community moderator says "there is currently no public Google Cloud service that offers the exact same features and performance as Google Lens" and points retail use cases to Product Search. This is a forum answer, not documentation; no Google page states it either way. [Google Developer forums](https://discuss.google.dev/t/difference-google-lens-vs-google-cloud-vision-api/193387)
 - **Cloud Vision Web Detection** returns web entities, matching images, pages with matching images and visually similar images. It has no price or merchant data and no domain filter. It costs $3.50 per 1,000 units after the first 1,000 free each month. [Detect web entities](https://cloud.google.com/vision/docs/detecting-web), [Cloud Vision pricing](https://cloud.google.com/vision/pricing)
-- **Vision API Product Search** compares a query image against *product sets you create* from your own reference images. Its categories include apparel. No deprecation is listed on the Vision deprecations page. It would only help if we built our own catalogue from affiliate feeds (see §5). [Product Search docs](https://docs.cloud.google.com/vision/product-search/docs), [Vision deprecations](https://cloud.google.com/vision/docs/deprecations)
+- **Vision API Product Search** compares a query image against _product sets you create_ from your own reference images. Its categories include apparel. No deprecation is listed on the Vision deprecations page. It would only help if we built our own catalogue from affiliate feeds (see §5). [Product Search docs](https://docs.cloud.google.com/vision/product-search/docs), [Vision deprecations](https://cloud.google.com/vision/docs/deprecations)
 - Google's Terms of Service forbid "using automated means to access content from any of our services in violation of the machine-readable instructions" (effective 2026-07-30). That is why the wrappers below exist as third parties that take on the scraping. [Google Terms of Service](https://policies.google.com/terms?hl=en-US)
 
 ### Unofficial wrappers: SearchApi.io and SerpApi
@@ -79,28 +79,28 @@ Both run Google Lens for you and return JSON.
   - SerpApi documents `title`, `link` (the merchant page), `source`, `thumbnail`, `rating`, a `price` object (`value`, `extracted_value`, `currency`) and `in_stock`. [SerpApi Lens Visual Matches](https://serpapi.com/google-lens-visual-matches-api)
   - SearchApi documents `price`, `extracted_price`, `currency` and `stock_information`, and notes that "Some visual matches carry price and stock". It lists **India** among the countries with Lens shopping results. [SearchApi Google Lens](https://www.searchapi.io/docs/google-lens)
   - Not every match has a price. Lens also returns non-retail pages such as Pinterest and blogs, so **filter by an allow-list of retailer domains**: myntra.com, ajio.com, amazon.in, flipkart.com, plus candidates such as nykaafashion.com, tatacliq.com and meesho.com.
-  - **Not verified here:** how often Lens on an Indian-locale query actually returns Myntra/Ajio/Flipkart pages for *generated* images. Neither vendor publishes this. It needs a prototype.
+  - **Not verified here:** how often Lens on an Indian-locale query actually returns Myntra/Ajio/Flipkart pages for _generated_ images. Neither vendor publishes this. It needs a prototype.
 - **SerpApi pricing** (no date on page). [SerpApi pricing](https://serpapi.com/pricing)
 
-  | Plan | $/month | Searches/month | Searches/hour | $ per 1,000 | US Legal Shield |
-  |---|---|---|---|---|---|
-  | Free | 0 | 250 | 50 | — | No |
-  | Starter | 25 | 1,000 | 200 | 25.00 | No |
-  | Developer | 75 | 5,000 | 1,000 | 15.00 | No |
-  | Production | 150 | 15,000 | 3,000 | 10.00 | Yes |
-  | Big Data | 275 | 30,000 | 6,000 | 9.17 | Yes |
-  | Searcher | 725 | 100,000 | 20,000 | 7.25 | Yes |
-  | Volume | 1,475 | 250,000 | 50,000 | 5.90 | Yes |
+  | Plan       | $/month | Searches/month | Searches/hour | $ per 1,000 | US Legal Shield |
+  | ---------- | ------- | -------------- | ------------- | ----------- | --------------- |
+  | Free       | 0       | 250            | 50            | —           | No              |
+  | Starter    | 25      | 1,000          | 200           | 25.00       | No              |
+  | Developer  | 75      | 5,000          | 1,000         | 15.00       | No              |
+  | Production | 150     | 15,000         | 3,000         | 10.00       | Yes             |
+  | Big Data   | 275     | 30,000         | 6,000         | 9.17        | Yes             |
+  | Searcher   | 725     | 100,000        | 20,000        | 7.25        | Yes             |
+  | Volume     | 1,475   | 250,000        | 50,000        | 5.90        | Yes             |
 
 - **SearchApi.io pricing** (no date on page). Every plan may use at most 20% of its monthly credits per hour. [SearchApi pricing](https://www.searchapi.io/pricing)
 
-  | Plan | $/month | Searches/month | $ per 1,000 | Legal Protection Guarantee |
-  |---|---|---|---|---|
-  | Developer | 40 | 10,000 | 4.00 | Not listed |
-  | Production | 100 | 35,000 | 3.00 | Yes |
-  | BigData | 250 | 100,000 | 2.50 | Yes |
-  | Scale | 500 | 250,000 | 2.00 | Yes |
-  | Octo 1M | 1,500 | 1,000,000 | 1.50 | Yes |
+  | Plan       | $/month | Searches/month | $ per 1,000 | Legal Protection Guarantee |
+  | ---------- | ------- | -------------- | ----------- | -------------------------- |
+  | Developer  | 40      | 10,000         | 4.00        | Not listed                 |
+  | Production | 100     | 35,000         | 3.00        | Yes                        |
+  | BigData    | 250     | 100,000        | 2.50        | Yes                        |
+  | Scale      | 500     | 250,000        | 2.00        | Yes                        |
+  | Octo 1M    | 1,500   | 1,000,000      | 1.50        | Yes                        |
 
 - **Terms (SerpApi, "Legal Documents", last updated 2026-08-27).** [SerpApi legal](https://serpapi.com/legal)
   - No clause forbids showing results to end users in your own app. You may not "resell or exploit" the Service without written permission.
@@ -129,7 +129,7 @@ Both run Google Lens for you and return JSON.
   - Website search needs the Enterprise edition at **$4.00 per 1,000 queries**. Website storage is billed at 500 KiB per page, about **$2.38/month per 1,000 pages**.
   - Basic website search over public sites needs no domain verification. Advanced indexing does.
   - Indexing millions of Myntra/Ajio product pages would be costly. Coverage of the basic index is whatever Google already crawled, and it returns web pages, not structured products.
-  - Vertex AI Search *for commerce* searches *your own* catalogue.
+  - Vertex AI Search _for commerce_ searches _your own_ catalogue.
 - **Gemini API Grounding with Google Search.**
   - **Price.** Gemini 3+ models get 5,000 free search requests a month, then **$14 per 1,000**, capped at 1,500 per day. Gemini 2.5 Flash is $35 per 1,000 grounded prompts after 1,500 per day. [Gemini API pricing](https://aistudio.google.com/docs/pricing)
   - **Terms (Gemini API Additional Terms, effective 2026-03-23).** [Gemini API terms](https://aistudio.google.com/docs/terms)
@@ -196,10 +196,10 @@ Both run Google Lens for you and return JSON.
 
 These assumptions are illustrative, not measured. Up to 10 generated images a day (5 Posts + 5 Style Me), about 1.5 Suggested Items each, so at most about 15 lookups per User per day if done eagerly.
 
-| Strategy | Lookups per User per month | SearchApi @ $2.50/1k | SerpApi @ $9.17/1k |
-|---|---|---|---|
-| Eager (every Suggested Item) | ~450 | ~$1.13 | ~$4.13 |
-| On tap, ~10% of Suggested Items, cached | ~45 | ~$0.11 | ~$0.41 |
+| Strategy                                | Lookups per User per month | SearchApi @ $2.50/1k | SerpApi @ $9.17/1k |
+| --------------------------------------- | -------------------------- | -------------------- | ------------------ |
+| Eager (every Suggested Item)            | ~450                       | ~$1.13               | ~$4.13             |
+| On tap, ~10% of Suggested Items, cached | ~45                        | ~$0.11               | ~$0.41             |
 
 Text deep links add $0.
 

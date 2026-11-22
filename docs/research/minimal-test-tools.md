@@ -6,13 +6,13 @@ The tests are minimal by design: they exist only to stop an RLS leak, spent Nano
 
 ## Answer
 
-| Layer | Recommended tool | Runs where | Cost |
-|---|---|---|---|
-| Database (RLS, Storage policies, `image_budget`) | **pgTAP via `supabase test db`**, after `supabase db start` | `ubuntu-latest` and the laptop (Docker) | $0 |
-| Edge Functions (Deno) | **`deno test`** on the exported handler, with `globalThis.fetch` stubbed by `@std/testing/mock`, and network permission limited to localhost | `ubuntu-latest` (setup-deno) and the laptop | $0 |
-| App (Expo, TypeScript) | **`tsc --noEmit` + `npx expo lint` + `npx expo export --platform android`**. Skip `jest-expo` until there is logic worth unit testing | `ubuntu-latest` | $0 |
-| Android end-to-end | **Not in the default CI.** If wanted, the Maestro CLI on `reactivecircus/android-emulator-runner`, in a manual or nightly workflow. Never Maestro Cloud or EAS Workflows Maestro jobs | `ubuntu-latest` with KVM | $0 (both paid options are excluded) |
-| Image-spend guard | **No Nano Banana key anywhere tests run**, plus `deno test --allow-net=127.0.0.1` so any real model call throws, plus a test seed with `image_budget.cap = 0` | everywhere | $0 |
+| Layer                                            | Recommended tool                                                                                                                                                                      | Runs where                                  | Cost                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ----------------------------------- |
+| Database (RLS, Storage policies, `image_budget`) | **pgTAP via `supabase test db`**, after `supabase db start`                                                                                                                           | `ubuntu-latest` and the laptop (Docker)     | $0                                  |
+| Edge Functions (Deno)                            | **`deno test`** on the exported handler, with `globalThis.fetch` stubbed by `@std/testing/mock`, and network permission limited to localhost                                          | `ubuntu-latest` (setup-deno) and the laptop | $0                                  |
+| App (Expo, TypeScript)                           | **`tsc --noEmit` + `npx expo lint` + `npx expo export --platform android`**. Skip `jest-expo` until there is logic worth unit testing                                                 | `ubuntu-latest`                             | $0                                  |
+| Android end-to-end                               | **Not in the default CI.** If wanted, the Maestro CLI on `reactivecircus/android-emulator-runner`, in a manual or nightly workflow. Never Maestro Cloud or EAS Workflows Maestro jobs | `ubuntu-latest` with KVM                    | $0 (both paid options are excluded) |
+| Image-spend guard                                | **No Nano Banana key anywhere tests run**, plus `deno test --allow-net=127.0.0.1` so any real model call throws, plus a test seed with `image_budget.cap = 0`                         | everywhere                                  | $0                                  |
 
 That is four tools on top of what the project already has: the Supabase CLI (with its bundled pgTAP), Deno, TypeScript/ESLint through Expo, and, only if e2e is wanted, Maestro.
 
@@ -44,7 +44,7 @@ Optional helpers: `basejump-supabase_test_helpers` adds `tests.create_supabase_u
 
 ```yaml
 - uses: supabase/setup-cli@v1
-  with: { version: latest }   # pin a version in practice
+  with: { version: latest } # pin a version in practice
 - run: supabase db start
 - run: supabase test db
 ```
@@ -77,8 +77,11 @@ Deno.test("over budget: Nano Banana is never called", async () => {
   using _fetch = stub(globalThis, "fetch", (input) => {
     const url = String(input instanceof Request ? input.url : input);
     calls.push(url);
-    if (url.includes("generativelanguage.googleapis.com") && url.includes(":generateContent")) {
-      return Promise.resolve(Response.json({ /* canned Gemini response */ }));
+    if (
+      url.includes("generativelanguage.googleapis.com") &&
+      url.includes(":generateContent")
+    ) {
+      return Promise.resolve(Response.json({/* canned Gemini response */}));
     }
     throw new Error(`unexpected fetch in test: ${url}`); // fail closed
   });

@@ -1,0 +1,32 @@
+# One cheap read a day so the Free project doesn't pause after a week idle
+# (docs/spec/dev-ex.md#keeping-hosted-awake). Uses only the public publishable key.
+name: keep-alive
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: env/hosted.env
+          sparse-checkout-cone-mode: false
+      - name: Send one REST read to hosted
+        run: |
+          set -a; . ./env/hosted.env; set +a
+          # PostgREST runs this in Postgres, which is the activity that keeps the project awake.
+          # image_budget has no client access, so 401/403 is expected and fine. Only a 5xx or no
+          # answer (a paused or broken project) fails the run.
+          code="$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "apikey: $EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY" \
+            "$EXPO_PUBLIC_SUPABASE_URL/rest/v1/image_budget?select=id&limit=1" || true)"
+          echo "HTTP $code"
+          case "$code" in 2??|401|403|404) ;; *) exit 1 ;; esac

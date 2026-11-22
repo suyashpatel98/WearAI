@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Rebuild local from the migrations and seed, then regenerate DB types"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+banner_local
+pnpm supabase db reset
+mise run db:types

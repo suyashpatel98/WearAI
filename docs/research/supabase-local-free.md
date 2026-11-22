@@ -13,11 +13,11 @@ Research for issue #43 (part of the dev-ex map, #42). Researched 2026-11-09. It 
 
 ## 1. CLI version: v3 is out, and CI must be written for it
 
-| | |
-|---|---|
-| Installed | `supabase` 2.106.0, a global npm install under nvm Node 20.19.5 |
-| Latest stable | **v3.1.0** (2026-11-09). v3.0.0 (2026-11-02) was the breaking release. The last v2 is v2.122.1 [R2] |
-| Install | `pnpm add -D supabase --allow-build=supabase`. The flag is required on pnpm 10 and later. Run it with `pnpm supabase …`. The CLI needs Node 20 or later [R15][R16] |
+|               |                                                                                                                                                                    |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Installed     | `supabase` 2.106.0, a global npm install under nvm Node 20.19.5                                                                                                    |
+| Latest stable | **v3.1.0** (2026-11-09). v3.0.0 (2026-11-02) was the breaking release. The last v2 is v2.122.1 [R2]                                                                |
+| Install       | `pnpm add -D supabase --allow-build=supabase`. The flag is required on pnpm 10 and later. Run it with `pnpm supabase …`. The CLI needs Node 20 or later [R15][R16] |
 
 Breaking changes in v3 that matter to WearAI [R1][R3]:
 
@@ -35,13 +35,13 @@ Breaking changes in v3 that matter to WearAI [R1][R3]:
 
 Default endpoints [R15]: API `http://127.0.0.1:54321` (`/auth/v1`, `/rest/v1`, `/storage/v1`, `/functions/v1`), Postgres `postgresql://postgres:postgres@127.0.0.1:54322/postgres`, Studio `:54323`, Mailpit `:54324`.
 
-| Area | Local behaviour |
-|---|---|
-| Postgres + RLS | Same Postgres image family as hosted; RLS policies behave the same. `supabase link` pins the local service versions to the hosted project's [R2]. Migrations live in `supabase/migrations`, applied by `db reset` or `migration up`. |
-| Auth | GoTrue with a `[auth.external.google]` provider in `config.toml`. Email goes to Mailpit (`:54324`), not real inboxes. Email/password, OTP and anonymous sign-in are all available locally [R17]. |
-| Storage | Same API. The default `file_size_limit` is 50 MiB, the same as the Free plan's upload limit [R17][R7]. Image transforms work locally through imgproxy, **but hosted image transformations are Pro-only** [R18]. Don't build on them. |
-| Edge Functions | `supabase functions serve` hot-reloads functions on `:54321/functions/v1/<name>`. They run in the `edge-runtime` container, so Deno doesn't need to be installed; install it only for editor support and `deno lint/test` [R19]. `config.toml` defaults to `deno_version = 2` and `policy = "per_worker"` [R17]. Local secrets go in `supabase/functions/.env`, which must be gitignored [R20]. |
-| Cron / Queues / pg_net | Run inside local Postgres. Inside a container, `127.0.0.1` means the container itself, so calls from the database or a function to another service must use the Docker network name or `host.docker.internal` [R15]. |
+| Area                   | Local behaviour                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Postgres + RLS         | Same Postgres image family as hosted; RLS policies behave the same. `supabase link` pins the local service versions to the hosted project's [R2]. Migrations live in `supabase/migrations`, applied by `db reset` or `migration up`.                                                                                                                                                            |
+| Auth                   | GoTrue with a `[auth.external.google]` provider in `config.toml`. Email goes to Mailpit (`:54324`), not real inboxes. Email/password, OTP and anonymous sign-in are all available locally [R17].                                                                                                                                                                                                |
+| Storage                | Same API. The default `file_size_limit` is 50 MiB, the same as the Free plan's upload limit [R17][R7]. Image transforms work locally through imgproxy, **but hosted image transformations are Pro-only** [R18]. Don't build on them.                                                                                                                                                            |
+| Edge Functions         | `supabase functions serve` hot-reloads functions on `:54321/functions/v1/<name>`. They run in the `edge-runtime` container, so Deno doesn't need to be installed; install it only for editor support and `deno lint/test` [R19]. `config.toml` defaults to `deno_version = 2` and `policy = "per_worker"` [R17]. Local secrets go in `supabase/functions/.env`, which must be gitignored [R20]. |
+| Cron / Queues / pg_net | Run inside local Postgres. Inside a container, `127.0.0.1` means the container itself, so calls from the database or a function to another service must use the Docker network name or `host.docker.internal` [R15].                                                                                                                                                                            |
 
 ### Differences from hosted that could bite
 
@@ -76,14 +76,14 @@ Default endpoints [R15]: API `http://127.0.0.1:54321` (`/auth/v1`, `/rest/v1`, `
 
 ## 4. Docker on an M1 with 16 GB
 
-| Option | Works with Supabase CLI? | Cost / licence |
-|---|---|---|
+| Option                                            | Works with Supabase CLI?                                                                                                                                                                                                         | Cost / licence                                                                                                                                     |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Docker Desktop 20.10.11** (installed, Nov 2021) | **Yes on this machine [spike]**: a CLI 2.x full stack (12 containers, healthy for 7 weeks) and CLI 3.1.0 `db start`/`test db`/`gen types`. A full `supabase start` on 3.1.0 wasn't tried, to avoid disturbing the running stack. | Free for personal use, education, non-commercial open source, and small businesses (fewer than 250 employees **and** less than $10M revenue) [R23] |
-| Docker Desktop, current (4.88+ era, Engine 29.x) | Officially listed [R16] | Same licence. Supports only the current and two previous macOS releases; needs at least 4 GB RAM [R24] |
-| **OrbStack** | Supabase's recommended runtime on macOS [R15] | $0 for "Personal, non-commercial use"; Pro is $8/user/month for business use [R25] |
-| **Colima** | Listed (macOS only) [R15] | MIT, free. Default VM: 2 CPU, 2 GiB RAM, 100 GiB disk; change with `colima start --cpu 4 --memory 6` [R26] |
-| Podman, Rancher Desktop | Listed [R16] | Free |
-| Native runtime (experimental) | No container engine. Apple silicon on macOS 14 or later (this Mac runs macOS 26.3.1). Opt-in via `[experimental] stack`, then `supabase start --runtime native` [R4] | Free; experimental, so flags can change |
+| Docker Desktop, current (4.88+ era, Engine 29.x)  | Officially listed [R16]                                                                                                                                                                                                          | Same licence. Supports only the current and two previous macOS releases; needs at least 4 GB RAM [R24]                                             |
+| **OrbStack**                                      | Supabase's recommended runtime on macOS [R15]                                                                                                                                                                                    | $0 for "Personal, non-commercial use"; Pro is $8/user/month for business use [R25]                                                                 |
+| **Colima**                                        | Listed (macOS only) [R15]                                                                                                                                                                                                        | MIT, free. Default VM: 2 CPU, 2 GiB RAM, 100 GiB disk; change with `colima start --cpu 4 --memory 6` [R26]                                         |
+| Podman, Rancher Desktop                           | Listed [R16]                                                                                                                                                                                                                     | Free                                                                                                                                               |
+| Native runtime (experimental)                     | No container engine. Apple silicon on macOS 14 or later (this Mac runs macOS 26.3.1). Opt-in via `[experimental] stack`, then `supabase start --runtime native` [R4]                                                             | Free; experimental, so flags can change                                                                                                            |
 
 Version and resource facts:
 
@@ -96,21 +96,21 @@ Version and resource facts:
 
 From the pricing page [R7] unless noted. Edge Function limits are in managed-backend.md [S3]; only the Free-specific ones are repeated here.
 
-| Limit | Free |
-|---|---|
-| Active projects | **2**, counted across all orgs where you're Owner/Admin. Paused projects don't count [R8] |
-| Pausing | After about **7 days** with too little "user database activity". "A few user requests to the database each day" is usually enough. A warning email comes about a week before the pause [R9] |
-| Undo a pause | Dashboard → Resume project, within **1 year**. Data and config come back [R9]. Scriptable via Management API `POST /v1/projects/{ref}/restore` (and `/pause`) [R10] |
-| Database / Storage | 500 MB DB, 1 GB files, 50 MB max upload, 5 GB + 5 GB cached egress |
-| Compute | Shared CPU, 500 MB RAM |
-| Edge Functions | 500k invocations/month, **150 s wall clock** (paid: 400 s), 100 functions per project [R21] |
-| Auth | 50,000 MAU |
-| Backups / logs | No backups; 1-day log retention |
-| Branching | **Not available on Free.** $0.01344 per branch-hour on Pro/Team. **Paid** |
-| Image transformations | **Pro and above only. Paid** [R18] |
-| Spend cap | Pro only. "You will not be charged while using the Free Plan" [R11] |
-| Over quota | Notification, then a grace period, then restrictions; no bill [R28] |
-| Card on file | **No primary source found.** Third-party guides say no card is needed. Since the Free plan is never charged [R11], a card wouldn't be billed anyway |
+| Limit                 | Free                                                                                                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Active projects       | **2**, counted across all orgs where you're Owner/Admin. Paused projects don't count [R8]                                                                                                   |
+| Pausing               | After about **7 days** with too little "user database activity". "A few user requests to the database each day" is usually enough. A warning email comes about a week before the pause [R9] |
+| Undo a pause          | Dashboard → Resume project, within **1 year**. Data and config come back [R9]. Scriptable via Management API `POST /v1/projects/{ref}/restore` (and `/pause`) [R10]                         |
+| Database / Storage    | 500 MB DB, 1 GB files, 50 MB max upload, 5 GB + 5 GB cached egress                                                                                                                          |
+| Compute               | Shared CPU, 500 MB RAM                                                                                                                                                                      |
+| Edge Functions        | 500k invocations/month, **150 s wall clock** (paid: 400 s), 100 functions per project [R21]                                                                                                 |
+| Auth                  | 50,000 MAU                                                                                                                                                                                  |
+| Backups / logs        | No backups; 1-day log retention                                                                                                                                                             |
+| Branching             | **Not available on Free.** $0.01344 per branch-hour on Pro/Team. **Paid**                                                                                                                   |
+| Image transformations | **Pro and above only. Paid** [R18]                                                                                                                                                          |
+| Spend cap             | Pro only. "You will not be charged while using the Free Plan" [R11]                                                                                                                         |
+| Over quota            | Notification, then a grace period, then restrictions; no bill [R28]                                                                                                                         |
+| Card on file          | **No primary source found.** Third-party guides say no card is needed. Since the Free plan is never charged [R11], a card wouldn't be billed anyway                                         |
 
 Things that would cost money, so avoid them:
 

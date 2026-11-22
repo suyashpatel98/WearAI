@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#MISE description="Regenerate supabase/functions/_shared/database.types.ts from local"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+banner_local
+out=supabase/functions/_shared/database.types.ts
+mkdir -p "$(dirname "$out")"
+pnpm --silent supabase gen types --lang typescript >"$out.tmp"
+mv "$out.tmp" "$out"
+pnpm prettier --write --log-level warn "$out"
+printf 'Wrote %s\n' "$out"

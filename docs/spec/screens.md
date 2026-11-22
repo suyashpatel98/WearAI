@@ -31,12 +31,12 @@ A linear flow shown once, until the first review is finished. Each step's Contin
 - **Header:** "Today", the date, "★ Saved" (with the count), avatar.
 - **Generate Feed button**, at the top of the Feed. Each successful press makes 3 new Posts, up to 3 times per IST day:
 
-  | State | Button |
-  |---|---|
-  | Presses left today | "Generate Feed · N of 3 left today" |
-  | A Feed is being made | "Making your Feed…" (disabled, with a spinner) |
+  | State                 | Button                                           |
+  | --------------------- | ------------------------------------------------ |
+  | Presses left today    | "Generate Feed · N of 3 left today"              |
+  | A Feed is being made  | "Making your Feed…" (disabled, with a spinner)   |
   | No presses left today | "3 of 3 used today, more at midnight" (disabled) |
-  | Image budget used up | "Image budget used up (30 of 30)" (disabled) |
+  | Image budget used up  | "Image budget used up (30 of 30)" (disabled)     |
 
 - **Layout:** all of today's Posts in one vertical scroll, newest Feed first, ending with "That's today's N."
 - **Each Post:**
@@ -56,6 +56,7 @@ A linear flow shown once, until the first review is finished. Each step's Contin
 ### Buy links
 
 Tapping a Suggested Item row opens a screen headed "Buy something similar":
+
 - the piece's swatch, name and price band
 - "Search these shops:" with search links for Myntra, Ajio, Amazon.in and Flipkart, built from the piece's name, colour and category. Tapping one opens it in the browser.
 
@@ -89,6 +90,7 @@ A two-column grid of saved Posts, newest save first, each with its image and cap
 ### Item details
 
 Opened by tapping an Item:
+
 - the crop
 - editable fields: name, category (grouped by slot; it decides the slot), main colour, second colour (or None), style (ethnic / western / fusion), pattern, and the description, labelled as what the stylist reads
 - the **"Don't use in Outfits"** switch ("Keep it in your Wardrobe, but never style it"), which applies straight away

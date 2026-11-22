@@ -1,0 +1,34 @@
+# The single source of truth for tool versions (docs/spec/dev-ex.md#tool-versions).
+# Bumped by hand. Keep pnpm in step with "packageManager" in package.json.
+[tools]
+node = "24.22.3"
+pnpm = "12.22.0"
+deno = "2.9.8"
+java = "zulu-17.70.201.0"
+
+[env]
+# The one hosted Supabase project (public; also in env/hosted.env).
+HOSTED_PROJECT_REF = "cwhxqpnmqbuoqrylbwsx"
+ANDROID_HOME = "{{env.HOME}}/Library/Android/sdk"
+
+# One-line tasks live here; multi-step ones are files in mise-tasks/ (docs/spec/dev-ex.md#command-surface).
+# Every task targets local unless its name ends in :hosted.
+
+[tasks.check]
+description = "Fast checks, no Docker: tsc, deno check, expo lint, deno lint, prettier --check"
+run = [
+  "pnpm tsc --noEmit",
+  "deno check --quiet supabase/functions/",
+  "pnpm expo lint --max-warnings 0",
+  "deno lint --quiet supabase/functions/",
+  "pnpm prettier --check --log-level warn .",
+]
+
+[tasks.fix]
+description = "Format everything with Prettier and apply expo lint fixes"
+run = ["pnpm prettier --write --log-level warn .", "pnpm expo lint --fix"]
+
+[tasks."test:functions"]
+description = "deno test on the Edge Function handlers, network limited to localhost, no env file"
+run = "deno test --permit-no-files --allow-net=127.0.0.1 supabase/functions/"
+

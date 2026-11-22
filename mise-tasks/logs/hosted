@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Read hosted logs (read-only). Extra args go to supabase logs, e.g. --service edge-functions --since 6h"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+banner_hosted
+exec pnpm supabase logs --remote="${HOSTED_PROJECT_REF:?}" "$@"

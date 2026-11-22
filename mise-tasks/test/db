@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="pgTAP tests against the local database (starts it if needed)"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+banner_local
+if ! local_db_running; then
+  docker_ready || die "Docker isn't running. Run: mise run up"
+  pnpm supabase db start
+fi
+pnpm supabase test db

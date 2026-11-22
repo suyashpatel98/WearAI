@@ -12,17 +12,17 @@ Expected backend bill (excluding model API costs, which will dominate): **about 
 
 ## Requirements checked
 
-| Requirement | Supabase | Firebase |
-|---|---|---|
-| Expo (Android) client | `supabase-js` works in Expo Go; Expo has a first-party guide [E1] | JS SDK works in Expo Go; React Native Firebase needs a development build [E2] |
-| Google Sign-In | `@react-native-google-signin/google-signin` → `signInWithIdToken` [S5] | Firebase Auth Google provider (native lib also needed) |
-| Private photos per User | Storage + RLS policies | Cloud Storage + Security Rules; **Blaze required since 2026-02-03** [F2] |
-| Database for Wardrobe, Posts, conversations | Postgres (relational, SQL, joins) | Firestore (document store, per-op billing) |
-| Scheduled daily Feed job | Supabase Cron (pg_cron) → pg_net → Edge Function [S6][S7]; fan out via Queues (pgmq) [S8] | `onSchedule` (Cloud Scheduler, $0.10/job/month, 3 free) [F3]; fan out with task queues |
-| Server-side model calls | Edge Functions (Deno): 400 s wall clock on paid plans, 2 s CPU per request excluding async I/O, 256 MB [S3] | Cloud Functions 2nd gen (Cloud Run), up to 60 min for HTTP [G1] |
-| Per-User daily limits | A counter table + a Postgres function / check in the Edge Function, atomic in one transaction | Firestore transaction on a counter document |
-| Push notifications | Expo push service (free, 600/s per project; needs FCM V1 credentials and a development build) [E3] | FCM free [F1], or Expo push on top of it |
-| India residency | DB, Storage, Auth in Mumbai `ap-south-1` [S2]; Edge Functions pinnable to `ap-south-1` [S9] | Firestore, Storage, Functions (2nd gen, Tier 2 pricing) in `asia-south1` [F4] |
+| Requirement                                 | Supabase                                                                                                    | Firebase                                                                               |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Expo (Android) client                       | `supabase-js` works in Expo Go; Expo has a first-party guide [E1]                                           | JS SDK works in Expo Go; React Native Firebase needs a development build [E2]          |
+| Google Sign-In                              | `@react-native-google-signin/google-signin` → `signInWithIdToken` [S5]                                      | Firebase Auth Google provider (native lib also needed)                                 |
+| Private photos per User                     | Storage + RLS policies                                                                                      | Cloud Storage + Security Rules; **Blaze required since 2026-02-03** [F2]               |
+| Database for Wardrobe, Posts, conversations | Postgres (relational, SQL, joins)                                                                           | Firestore (document store, per-op billing)                                             |
+| Scheduled daily Feed job                    | Supabase Cron (pg_cron) → pg_net → Edge Function [S6][S7]; fan out via Queues (pgmq) [S8]                   | `onSchedule` (Cloud Scheduler, $0.10/job/month, 3 free) [F3]; fan out with task queues |
+| Server-side model calls                     | Edge Functions (Deno): 400 s wall clock on paid plans, 2 s CPU per request excluding async I/O, 256 MB [S3] | Cloud Functions 2nd gen (Cloud Run), up to 60 min for HTTP [G1]                        |
+| Per-User daily limits                       | A counter table + a Postgres function / check in the Edge Function, atomic in one transaction               | Firestore transaction on a counter document                                            |
+| Push notifications                          | Expo push service (free, 600/s per project; needs FCM V1 credentials and a development build) [E3]          | FCM free [F1], or Expo push on top of it                                               |
+| India residency                             | DB, Storage, Auth in Mumbai `ap-south-1` [S2]; Edge Functions pinnable to `ap-south-1` [S9]                 | Firestore, Storage, Functions (2nd gen, Tier 2 pricing) in `asia-south1` [F4]          |
 
 Push needs a development build either way (Expo Go dropped push in SDK 53 [E3]), as does native Google Sign-In, so neither backend's need for native modules is a real differentiator. WearAI will ship a development build regardless.
 
@@ -61,11 +61,11 @@ Push needs a development build either way (Expo Go dropped push in SDK 53 [E3]),
 
 Assumptions per active User per month: ~180 new generated images (150 Feed Posts + ~30 Style Me) at ~300 KB, plus Wardrobe photos, so ~100 MB stored at steady state (depends on the retention policy, not yet decided); ~110 MB served (cached via CDN); ~1,000 Edge Function invocations; a few hundred DB reads/writes per day. **Model API costs are excluded** and will be much larger.
 
-| Users | Supabase (Mumbai) | Firebase (Mumbai, Blaze) |
-|---|---|---|
-| 500 | ~$25 (Pro; everything within quota) | ~$10–20 (mostly free tiers; storage + egress billed) |
-| 5,000 | ~$100–150: Pro $25 + Medium compute ~$50 net + storage ~$9 + cached egress ~$9 (up to ~$27 uncached) + invocations ~$6 | ~$120–200: Firestore ~$20 + Storage ~$12 + egress ~$65 + Functions (depends on concurrency) |
-| 50,000 | ~$500–900: Pro $25 + Large/XL compute $100–200 + storage ~$105 + egress ~$160 cached (~$470 uncached) + invocations ~$96 | ~$1,000–1,500: Firestore ~$180 + Storage ~$115 + egress ~$650 + Functions |
+| Users  | Supabase (Mumbai)                                                                                                        | Firebase (Mumbai, Blaze)                                                                    |
+| ------ | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| 500    | ~$25 (Pro; everything within quota)                                                                                      | ~$10–20 (mostly free tiers; storage + egress billed)                                        |
+| 5,000  | ~$100–150: Pro $25 + Medium compute ~$50 net + storage ~$9 + cached egress ~$9 (up to ~$27 uncached) + invocations ~$6   | ~$120–200: Firestore ~$20 + Storage ~$12 + egress ~$65 + Functions (depends on concurrency) |
+| 50,000 | ~$500–900: Pro $25 + Large/XL compute $100–200 + storage ~$105 + egress ~$160 cached (~$470 uncached) + invocations ~$96 | ~$1,000–1,500: Firestore ~$180 + Storage ~$115 + egress ~$650 + Functions                   |
 
 The Firebase column is less certain: GCS egress and Cloud Run per-second rates for Mumbai weren't confirmed from the primary tables. Even so, the direction holds: egress and time spent waiting in functions cost more on Firebase for this workload.
 

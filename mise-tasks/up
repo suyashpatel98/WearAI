@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Start Colima and the local Supabase stack"
+. "$MISE_PROJECT_ROOT/scripts/lib.sh"
+banner_local
+if ! colima status >/dev/null 2>&1; then
+  colima start --cpu 4 --memory 6
+fi
+pnpm supabase start
